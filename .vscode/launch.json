@@ -1,0 +1,20 @@
+{
+    "configurations": [
+
+        {
+            "type": "java",
+            "name": "CodeLens (Launch) - App",
+
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "console": "internalConsole",
+            "stopOnEntry": false,
+            "mainClass": "ne.wsdlparse.App",
+            "args": [
+                "/home/nour/temp/FE_GetActionDestinationForCustomer.wsdl",
+                "/home/nour/temp/checkCustomerSourceSystem.wsdl",
+                "/home/nour/temp/GetBESCustomerbyCustNo.wsdl"],
+            "projectName": "wsdlparse",
+        }
+    ]
+}
