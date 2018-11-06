@@ -13,7 +13,8 @@
             "args": [
                 "/home/nour/temp/FE_GetActionDestinationForCustomer.wsdl",
                 "/home/nour/temp/checkCustomerSourceSystem.wsdl",
-                "/home/nour/temp/GetBESCustomerbyCustNo.wsdl"],
+                "/home/nour/temp/GetBESCustomerbyCustNo.wsdl",
+                "/home/nour/temp/FE_SuspendAccount.wsdl"],
             "projectName": "wsdlparse",
         }
     ]

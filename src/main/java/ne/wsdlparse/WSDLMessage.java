@@ -12,9 +12,6 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
-import ne.wsdlparse.esql.ESQLBlock;
-import ne.wsdlparse.esql.ESQLLine;
-import ne.wsdlparse.esql.ESQLRoot;
 import ne.wsdlparse.exception.WSDLException;
 import ne.wsdlparse.exception.WSDLExceptionCode;
 import ne.wsdlparse.xsd.XSDElement;
@@ -78,14 +75,12 @@ public class WSDLMessage {
         return builder.toString();
     }
 
-    public ESQLBlock generateESQL() {
-
-        String xPath = Utils.getParamWithPrefix(this.prefix, this.name);
-        ArrayList<ESQLLine> esql = new ArrayList<ESQLLine>();
+    public void generateESQL() {
+        this.manager.getESQLManager().levelUp(this.prefix, this.name);
         for (XSDElement element : this.parts) {
-            element.toESQL(manager, xPath);
+            element.toESQL();
         }
-        return new ESQLBlock(this.manager, esql);
+        this.manager.getESQLManager().levelDown(this.name, this.prefix);
 
     }
 

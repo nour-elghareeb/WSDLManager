@@ -207,4 +207,23 @@ public class XSDFile {
 
     }
 
+    public String getNamespaceURI(String prefix) {
+        String ns = null;
+        ns = this.xPath.getNamespaceContext().getNamespaceURI(prefix);
+        if (ns != null)
+            return ns;
+        for (XSDFile file : this.includes) {
+            ns = file.getNamespaceURI(prefix);
+            if (ns != null)
+                return ns;
+        }
+        for (XSDFile file : this.imports) {
+            ns = file.getNamespaceURI(prefix);
+            if (ns != null)
+                return ns;
+        }
+
+        return null;
+    }
+
 }

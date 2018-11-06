@@ -1,10 +1,8 @@
 package ne.wsdlparse.xsd;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Locale;
 
-import javax.xml.XMLConstants;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpressionException;
@@ -14,8 +12,6 @@ import org.xml.sax.SAXException;
 
 import ne.wsdlparse.Utils;
 import ne.wsdlparse.WSDLManagerRetrieval;
-import ne.wsdlparse.esql.ESQLLine;
-import ne.wsdlparse.esql.ESQLRoot;
 import ne.wsdlparse.exception.WSDLException;
 import ne.wsdlparse.exception.WSDLExceptionCode;
 import ne.wsdlparse.xsd.constant.XSDSimpleElementType;
@@ -226,6 +222,7 @@ public abstract class XSDElement<T> {
         else if (nodeName.equals("union"))
             return new XSDUnion(manager, node);
         else {
+            System.out.println("aasadasdsadasdsadasd");
             System.out.println(nodeName);
             throw new WSDLException(WSDLExceptionCode.XSD_NOT_COMPLEX_TYPE);
         }
@@ -240,6 +237,7 @@ public abstract class XSDElement<T> {
             element = new XSDSimpleElement(manager, node, simpleType);
             return element;
         } catch (WSDLException e) {
+            System.out.println(type);
             throw new WSDLException(WSDLExceptionCode.XSD_NOT_SIMPLE_ELEMENT);
         }
 
@@ -392,7 +390,7 @@ public abstract class XSDElement<T> {
         return this.prefix;
     }
 
-    public String toESQL(WSDLManagerRetrieval manager, String xPath) {
-        return null;
+    public void toESQL() {
+        ;
     }
 }

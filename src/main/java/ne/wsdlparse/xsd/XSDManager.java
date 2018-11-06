@@ -30,28 +30,12 @@ import ne.wsdlparse.Utils;
 import ne.wsdlparse.WSDLManagerRetrieval;
 
 public class XSDManager {
-    private XPath xPath;
     private WSDLManagerRetrieval wsdlManager;
-    private HashMap<String, String> namespaces = new HashMap<String, String>();
-    private ArrayList<XSDFile> includes = new ArrayList<XSDFile>();
-    private ArrayList<XSDFile> imports;
-    private HashMap<String, Node> inlineImports;
     private String targetNS;
     private String name;
     private Node inlineSchema;
     private String workingdir;
     private XSDFile xsd;
-
-    private void _import(String filePath, String namespace) throws FileNotFoundException, SAXException, IOException,
-            ParserConfigurationException, XPathExpressionException {
-        this.imports.add(new XSDFile(String.format(Locale.getDefault(), "%s/%s", workingdir, filePath), namespace));
-    }
-
-    private void include(String filePath) throws FileNotFoundException, SAXException, IOException,
-            ParserConfigurationException, XPathExpressionException {
-        this.includes
-                .add(new XSDFile(String.format(Locale.getDefault(), "%s/%s", workingdir, filePath), this.targetNS));
-    }
 
     public XSDManager(WSDLManagerRetrieval wsdlManager, String workingdir, NodeList schemas)
             throws SAXException, IOException, ParserConfigurationException, XPathExpressionException {
@@ -129,5 +113,10 @@ public class XSDManager {
         // }
         // // return null.
         // return node;
+    }
+
+    public String getNamespaceURI(String prefix) {
+
+        return this.xsd.getNamespaceURI(prefix);
     }
 }

@@ -10,7 +10,6 @@ import org.w3c.dom.NodeList;
 import ne.wsdlparse.Utils;
 import ne.wsdlparse.WSDLManagerRetrieval;
 import ne.wsdlparse.esql.ESQLLine;
-import ne.wsdlparse.esql.ESQLRoot;
 import ne.wsdlparse.xsd.constant.XSDSimpleElementType;
 
 public class XSDSimpleElement<T> extends XSDElement<T> {
@@ -27,9 +26,8 @@ public class XSDSimpleElement<T> extends XSDElement<T> {
     }
 
     @Override
-    public String toESQL(WSDLManagerRetrieval manager, String xPath) {
-        System.out.println(xPath + "." + Utils.getParamWithPrefix(this.prefix, this.name) + " = '';");
-        return xPath;
+    public void toESQL() {
+        this.manager.getESQLManager().addParam(this.prefix, this.name, this.simpleType);
     }
 
     @Override

@@ -16,7 +16,6 @@ import org.xml.sax.SAXException;
 import ne.wsdlparse.Utils;
 import ne.wsdlparse.WSDLManagerRetrieval;
 import ne.wsdlparse.esql.ESQLLine;
-import ne.wsdlparse.esql.ESQLRoot;
 import ne.wsdlparse.exception.WSDLException;
 
 public class XSDSimpleType extends XSDComplexElement<XSDElement<?>> {

@@ -9,6 +9,7 @@ import javax.xml.xpath.XPathExpressionException;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
+import ne.wsdlparse.esql.ESQLManager;
 import ne.wsdlparse.xsd.XSDManager;
 
 public interface WSDLManagerRetrieval {
@@ -19,5 +20,9 @@ public interface WSDLManagerRetrieval {
     XPath getXPath();
 
     String getTargetNameSpace();
+
+    ESQLManager getESQLManager();
+
+    String getNamespaceURI(String prefix);
 
 }

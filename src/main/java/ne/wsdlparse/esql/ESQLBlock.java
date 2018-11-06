@@ -2,47 +2,52 @@ package ne.wsdlparse.esql;
 
 import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.Locale;
 
 import ne.wsdlparse.WSDLManagerRetrieval;
+import ne.wsdlparse.esql.constant.ESQLDataType;
+import ne.wsdlparse.esql.constant.ESQLSource;
 
 public class ESQLBlock {
     private WSDLManagerRetrieval manager;
     private ArrayList<ESQLLine> elementsLines;
-    private ArrayList<String> namespaceloines;
+    private ArrayList<ESQLLine> nsDeclarations;
+    private HashSet<String> prefixes;
 
-    public ESQLBlock(WSDLManagerRetrieval manager, ArrayList<ESQLLine> lines) {
+    public ESQLBlock(WSDLManagerRetrieval manager) {
         this.manager = manager;
-        this.elementsLines = lines;
-        this.generateNSLines();
+        this.elementsLines = new ArrayList<ESQLLine>();
+        this.nsDeclarations = new ArrayList<ESQLLine>();
+        this.prefixes = new HashSet<String>();
+    }
+
+    void addLine(ESQLLine line) {
+        this.elementsLines.add(line);
+    }
+
+    void addPrefix(String prefix) {
+        if (prefix == null)
+            return;
+        this.prefixes.add(prefix);
     }
 
     private void generateNSLines() {
-        final HashSet<String> prefixes = new HashSet<String>();
-        for (ESQLLine line : this.elementsLines) {
-            prefixes.addAll(line.getPrefixes());
+        this.nsDeclarations.clear();
+        for (String prefix : prefixes) {
+            this.nsDeclarations
+                    .add(new ESQLDeclareLine(prefix, ESQLDataType.NAMESPACE, this.manager.getNamespaceURI(prefix)));
         }
-
-        this.namespaceloines = new ArrayList<String>() {
-            {
-                for (String prefix : prefixes.toArray(new String[prefixes.size()])) {
-                    add(String.format(Locale.getDefault(), "DECLARE %s NAMESPACE '%s';", prefix,
-                            ESQLBlock.this.manager.getXPath().getNamespaceContext().getNamespaceURI(prefix)));
-                }
-            }
-        };
     }
 
-    public String generate(ESQLRoot root) {
+    public String generate(ESQLSource type) {
+        this.generateNSLines();
         StringBuilder builder = new StringBuilder();
         String newLine = System.getProperty("line.separator");
-        for (String ns : this.namespaceloines) {
-            builder.append(ns);
+        for (ESQLLine line : this.nsDeclarations) {
+            builder.append(line.generate());
             builder.append(newLine);
         }
         for (ESQLLine line : this.elementsLines) {
-            line.generate(root);
-            builder.append(line.getValue());
+            builder.append(line.generate());
             builder.append(newLine);
         }
         return builder.toString();

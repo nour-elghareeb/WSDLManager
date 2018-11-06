@@ -1,11 +1,11 @@
-package ne.wsdlparse.esql;
+package ne.wsdlparse.esql.constant;
 
-public enum ESQLRoot {
+public enum ESQLSource {
     INPUT("InputRoot"), OUTPUT("OutputRoot"), ENVIRONMENT("Environment"), LOCAL_ENVIRONMENT("LocalEnvironment"),
     LOCAL_OUTPUT_ENVIRONMENT("LocalOutputEnvironment");
     private String value;
 
-    ESQLRoot(String value) {
+    ESQLSource(String value) {
         this.value = value;
     }
 

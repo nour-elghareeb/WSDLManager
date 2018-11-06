@@ -1,34 +1,32 @@
 package ne.wsdlparse;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.Locale;
 import java.util.Map.Entry;
+
+import javax.xml.namespace.NamespaceContext;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.xpath.XPath;
+import javax.xml.xpath.XPathConstants;
+import javax.xml.xpath.XPathException;
+import javax.xml.xpath.XPathExpressionException;
+import javax.xml.xpath.XPathFactory;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
-
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.lang.ClassNotFoundException;
-import java.io.IOException;
-
 import org.xml.sax.SAXException;
 
+import ne.wsdlparse.esql.ESQLBlock;
+import ne.wsdlparse.esql.ESQLManager;
 import ne.wsdlparse.xsd.XSDManager;
-
-import javax.xml.xpath.XPathFactory;
-import javax.xml.xpath.XPathConstants;
-import javax.xml.xpath.XPathException;
-import javax.xml.xpath.XPathExpressionException;
-import javax.xml.namespace.NamespaceContext;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.xpath.XPath;
 
 public class WSDLManager implements WSDLManagerRetrieval {
     private Document wsdl;
@@ -40,6 +38,7 @@ public class WSDLManager implements WSDLManagerRetrieval {
     private XPath xPath;
     private String workingdir;
     private XSDManager xsdManager;
+    private ESQLManager esqlManager = new ESQLManager(this);
 
     public WSDLManager(String path) {
 
@@ -153,4 +152,18 @@ public class WSDLManager implements WSDLManagerRetrieval {
     public String getTargetNameSpace() {
         return this.targetNS;
     }
+
+    public String getNamespaceURI(String prefix) {
+        String uri;
+        uri = this.xPath.getNamespaceContext().getNamespaceURI(prefix);
+        if (uri == null) {
+            this.xsdManager.getNamespaceURI(prefix);
+        }
+        return uri;
+    }
+
+    public ESQLManager getESQLManager() {
+        return this.esqlManager;
+    }
+
 }
