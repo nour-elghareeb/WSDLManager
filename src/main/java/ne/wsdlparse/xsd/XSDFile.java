@@ -62,6 +62,7 @@ public class XSDFile {
         this.xsd = DocumentBuilderFactory.newInstance().newDocumentBuilder().newDocument();
         Element root = this.xsd.createElement("root");
         this.xsd.appendChild(root);
+        this.targetNS = null;
         this.isRootModified = true;
         for (int i = 0; i < schema.getLength(); i++) {
             Node node = schema.item(i);
@@ -178,9 +179,10 @@ public class XSDFile {
         Object node = null;
         int i = 0;
         node = this.find(newxpath, this.xsd, returnType);
-        if (node == null)
 
+        if (node == null)
             node = this.findInChildren(xpath, returnType);
+
         return node;
     }
 
@@ -188,19 +190,28 @@ public class XSDFile {
         Object node = null;
         for (XSDFile file : this.includes) {
             node = file.find(xpath, returnType);
-            if (node != null)
+            if (node != null) {
+                if (node instanceof Node && ((Node) node).getUserData("tns") == null)
+                    ((Node) node).setUserData("tns", file.targetNS, null);
                 return node;
+            }
         }
 
         for (XSDFile file : this.imports) {
             node = file.find(xpath, returnType);
-            if (node != null)
+            if (node != null) {
+                if (node instanceof Node && ((Node) node).getUserData("tns") == null)
+                    ((Node) node).setUserData("tns", file.targetNS, null);
                 return node;
+            }
         }
         for (Entry<String, Node> entry : this.inlineImports.entrySet()) {
             node = this.find(xpath, entry.getValue(), returnType);
-            if (node != null)
+            if (node != null) {
+                if (node instanceof Node && ((Node) node).getUserData("tns") == null)
+                    ((Node) node).setUserData("tns", entry.getKey(), null);
                 return node;
+            }
         }
 
         return node;
@@ -221,6 +232,25 @@ public class XSDFile {
             ns = file.getNamespaceURI(prefix);
             if (ns != null)
                 return ns;
+        }
+
+        return null;
+    }
+
+    public String getPrefix(String ns) {
+        String prefix = null;
+        prefix = this.xPath.getNamespaceContext().getPrefix(ns);
+        if (prefix != null)
+            return prefix;
+        for (XSDFile file : this.includes) {
+            prefix = file.getPrefix(ns);
+            if (prefix != null)
+                return prefix;
+        }
+        for (XSDFile file : this.imports) {
+            prefix = file.getPrefix(ns);
+            if (prefix != null)
+                return prefix;
         }
 
         return null;

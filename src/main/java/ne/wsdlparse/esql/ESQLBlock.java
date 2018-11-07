@@ -12,6 +12,7 @@ public class ESQLBlock {
     private ArrayList<ESQLLine> elementsLines;
     private ArrayList<ESQLLine> nsDeclarations;
     private HashSet<String> prefixes;
+    private boolean lastWasEmpty = false;
 
     public ESQLBlock(WSDLManagerRetrieval manager) {
         this.manager = manager;
@@ -22,6 +23,7 @@ public class ESQLBlock {
 
     void addLine(ESQLLine line) {
         this.elementsLines.add(line);
+        this.lastWasEmpty = false;
     }
 
     void addPrefix(String prefix) {
@@ -38,6 +40,16 @@ public class ESQLBlock {
         }
     }
 
+    public void print(ESQLSource type) {
+        this.generateNSLines();
+        for (ESQLLine line : this.nsDeclarations) {
+            line.print();
+        }
+        for (ESQLLine line : this.elementsLines) {
+            line.print();
+        }
+    }
+
     public String generate(ESQLSource type) {
         this.generateNSLines();
         StringBuilder builder = new StringBuilder();
@@ -51,5 +63,11 @@ public class ESQLBlock {
             builder.append(newLine);
         }
         return builder.toString();
+    }
+
+    public void addEmptyLine(boolean allowMultiSuccessiveEmpty) {
+        if (!this.lastWasEmpty || (allowMultiSuccessiveEmpty && this.lastWasEmpty))
+            this.elementsLines.add(new ESQLCommentLine(null));
+        this.lastWasEmpty = true;
     }
 }

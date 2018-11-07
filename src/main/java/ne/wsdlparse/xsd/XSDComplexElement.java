@@ -39,7 +39,9 @@ public abstract class XSDComplexElement<T> extends XSDElement<T> {
     protected void loadChildren()
             throws XPathExpressionException, SAXException, IOException, ParserConfigurationException, WSDLException {
         Node child = Utils.getFirstXMLChild(this.node);
+
         while (child != null) {
+            child.setUserData("tns", this.node.getUserData("tns"), null);
             XSDElement element = XSDElement.getInstance(this.manager, child);
             this.children.add(element);
             child = Utils.getNextXMLSibling(child);
@@ -48,11 +50,24 @@ public abstract class XSDComplexElement<T> extends XSDElement<T> {
 
     @Override
     public void toESQL() {
-        this.manager.getESQLManager().levelUp(this.prefix, this.name);
+        super.toESQL();
+        String prefix = this.prefix;
+        if (this.prefix == null) {
+            String ns = this.getExplicitlySetTargetTamespace();
+            if (ns == null) {
+                ns = this.getTargetTamespace();
+            }
+            if (!this.manager.getTargetNameSpace().equals(ns)) {
+                prefix = this.manager.getPrefix(ns);
+            }
+        }
+
+        this.manager.getESQLManager().levelUp(prefix, this.name);
         for (XSDElement element : this.children) {
             element.toESQL();
         }
-        this.manager.getESQLManager().levelDown(this.name, this.prefix);
+        // this.manager.getESQLManager().addEmptyLine(false);
+        this.manager.getESQLManager().levelDown(this.name, prefix);
 
         // String temp = xPath;
         // if (name != null && !xPath.contains(this.name))
@@ -67,6 +82,7 @@ public abstract class XSDComplexElement<T> extends XSDElement<T> {
 
     @Override
     public String getNodeHelp() {
-        return null;
+        return help;
     }
+
 }

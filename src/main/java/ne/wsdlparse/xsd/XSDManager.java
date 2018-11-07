@@ -1,32 +1,15 @@
 package ne.wsdlparse.xsd;
 
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Locale;
-import java.util.Map.Entry;
 
-import javax.xml.namespace.NamespaceContext;
 import javax.xml.namespace.QName;
-import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.xpath.XPath;
-import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpressionException;
-import javax.xml.xpath.XPathFactory;
 
-import org.w3c.dom.Document;
-import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
-import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
-import ne.wsdlparse.Utils;
 import ne.wsdlparse.WSDLManagerRetrieval;
 
 public class XSDManager {
@@ -84,6 +67,7 @@ public class XSDManager {
 
     public Object find(String xpath, Object source, QName returnType) throws XPathExpressionException {
         return this.xsd.find(xpath, source, returnType);
+
     }
 
     public Object find(String xpath, QName returnType) throws XPathExpressionException {
@@ -116,7 +100,10 @@ public class XSDManager {
     }
 
     public String getNamespaceURI(String prefix) {
-
         return this.xsd.getNamespaceURI(prefix);
+    }
+
+    public String getPrefix(String ns) {
+        return this.xsd.getPrefix(ns);
     }
 }

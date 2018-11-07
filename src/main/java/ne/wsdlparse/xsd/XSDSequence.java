@@ -20,8 +20,7 @@ public class XSDSequence extends XSDComplexElement {
 
     @Override
     public String getNodeHelp() {
-        return String.format(Locale.getDefault(),
-                "The following % children must appear in a sequence (in order). Each element can occurr from 0 to any number of times",
+        return String.format(Locale.getDefault(), "The following %s children must appear in a sequence (in order)",
                 this.children.size());
     }
 

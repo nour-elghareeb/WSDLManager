@@ -157,13 +157,22 @@ public class WSDLManager implements WSDLManagerRetrieval {
         String uri;
         uri = this.xPath.getNamespaceContext().getNamespaceURI(prefix);
         if (uri == null) {
-            this.xsdManager.getNamespaceURI(prefix);
+            uri = this.xsdManager.getNamespaceURI(prefix);
         }
         return uri;
     }
 
     public ESQLManager getESQLManager() {
         return this.esqlManager;
+    }
+
+    public String getPrefix(String tns) {
+        String prefix;
+        prefix = this.xPath.getNamespaceContext().getPrefix(tns);
+        if (prefix == null) {
+            prefix = this.xsdManager.getPrefix(tns);
+        }
+        return prefix;
     }
 
 }

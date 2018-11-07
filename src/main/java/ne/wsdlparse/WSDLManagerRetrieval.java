@@ -25,4 +25,6 @@ public interface WSDLManagerRetrieval {
 
     String getNamespaceURI(String prefix);
 
+    String getPrefix(String targetTamespace);
+
 }

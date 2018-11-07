@@ -44,10 +44,14 @@ public class XSDExtention extends XSDComplexElement<XSDElement<?>> {
                 .find(String.format(Locale.getDefault(), "/schema/*[@name='%s']", this.base), XPathConstants.NODE);
         XSDComplexElement baseElement = (XSDComplexElement) ((XSDComplexElement) XSDElement.getInstance(this.manager,
                 base)).getChildren().get(0);
+        // this.node.setUserData("tns", base.getUserData("tns"), null);
         super.loadChildren();
         XSDComplexElement baseChild = (XSDComplexElement) getChildren().get(0);
-
+        String xxx = this.getTargetTamespace();
+        String yyy = baseChild.getTargetTamespace();
+        String zzz = baseElement.getTargetTamespace();
         for (XSDElement el : (ArrayList<XSDComplexElement>) baseChild.getChildren()) {
+            el.explicitlySetTargetNameSpace(this.getTargetTamespace());
             baseElement.addChild(el);
         }
         this.children = new ArrayList<XSDElement<XSDElement<?>>>();

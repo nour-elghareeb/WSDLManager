@@ -9,10 +9,12 @@ import javax.xml.xpath.XPathExpressionException;
 import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
 
+import ne.wsdlparse.Utils;
 import ne.wsdlparse.WSDLManagerRetrieval;
 import ne.wsdlparse.exception.WSDLException;
 
 public class XSDChoice extends XSDComplexElement<XSDElement<?>> {
+
     public XSDChoice(WSDLManagerRetrieval manager, Node node)
             throws XPathExpressionException, SAXException, IOException, ParserConfigurationException, WSDLException {
         super(manager, node, XSDChoice.class);
@@ -20,12 +22,27 @@ public class XSDChoice extends XSDComplexElement<XSDElement<?>> {
 
     @Override
     public String getNodeHelp() {
-        return String.format(Locale.getDefault(), "Only one of the following %s parameters is allowed.",
+        return String.format(Locale.getDefault(), "You have a choice of the following %s parameters:",
                 this.children.size());
     }
 
     @Override
     protected Boolean isESQLPrintable() {
         return true;
+    }
+
+    @Override
+    protected void loadChildren()
+            throws XPathExpressionException, SAXException, IOException, ParserConfigurationException, WSDLException {
+        Node child = Utils.getFirstXMLChild(this.node);
+        int i = 1;
+        while (child != null) {
+            child.setUserData("tns", this.node.getUserData("tns"), null);
+            XSDElement element = XSDElement.getInstance(this.manager, child);
+            element.setHelp(String.format(Locale.getDefault(), "Choice (%s) --------------", i));
+            i++;
+            this.children.add(element);
+            child = Utils.getNextXMLSibling(child);
+        }
     }
 }

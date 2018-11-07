@@ -3,6 +3,7 @@ package ne.wsdlparse.esql;
 import java.util.Locale;
 
 import ne.wsdlparse.esql.constant.ESQLDataType;
+import ne.wsdlparse.utility.ConsoleStyle;
 
 public class ESQLDeclareLine extends ESQLLine {
     private String param;
@@ -26,5 +27,14 @@ public class ESQLDeclareLine extends ESQLLine {
     String generate() {
         return String.format(Locale.getDefault(), "DECLARE %s %s '%s';", this.param, this.type.getValue(),
                 this.defaultValue);
+    }
+
+    @Override
+    public void print() {
+        String line = String.format(Locale.getDefault(), "%s %s %s '%s';",
+                ConsoleStyle.addTextColor("DECLARE", ConsoleStyle.Color.YELLOW),
+                ConsoleStyle.style(this.param, ConsoleStyle.Style.BOLD),
+                ConsoleStyle.addTextColor(this.type.getValue(), ConsoleStyle.Color.BLUE), this.defaultValue);
+        System.out.println(line);
     }
 }

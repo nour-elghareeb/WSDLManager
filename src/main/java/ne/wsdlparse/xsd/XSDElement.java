@@ -17,6 +17,7 @@ import ne.wsdlparse.exception.WSDLExceptionCode;
 import ne.wsdlparse.xsd.constant.XSDSimpleElementType;
 
 public abstract class XSDElement<T> {
+    protected String help;
     protected String name;
     protected T value;
     protected int maxOccurs = -1;
@@ -29,6 +30,7 @@ public abstract class XSDElement<T> {
     protected WSDLManagerRetrieval manager;
     protected String xPath = "";
     protected boolean isSkippable = false;
+    private String targetNamespace;
 
     public abstract String getNodeHelp();
 
@@ -44,7 +46,21 @@ public abstract class XSDElement<T> {
         return val;
     }
 
+    public void setHelp(String help) {
+        this.help = help;
+    }
+
     protected abstract Boolean isESQLPrintable();
+
+    public String getTargetTamespace() {
+        String ns = (String) this.node.getUserData("tns");
+        return ns;
+    }
+
+    public String getExplicitlySetTargetTamespace() {
+        String ns = (String) this.node.getUserData("EX_tns");
+        return ns;
+    }
 
     public static XSDElement<?> getInstance(WSDLManagerRetrieval manager, Node node)
             throws XPathExpressionException, SAXException, IOException, ParserConfigurationException, WSDLException {
@@ -59,7 +75,7 @@ public abstract class XSDElement<T> {
 
         Node element = node;
         Node elementTypeNode = null;
-
+        String tns = (String) element.getUserData("tns");
         if (type != null) {
             try {
                 xsdElement = XSDElement.getInstanceForSimpleElement(manager, element, Utils.splitPrefixes(type)[1]);
@@ -71,6 +87,7 @@ public abstract class XSDElement<T> {
                             String.format(Locale.getDefault(), "/schema/*[@name='%s']", Utils.splitPrefixes(type)[1]),
                             XPathConstants.NODE);
                     xsdElement = XSDElement.getInstance(manager, element);
+                    tns = (String) element.getUserData("tns");
                     xsdElement.setName(name);
                     return xsdElement;
                 }
@@ -93,8 +110,11 @@ public abstract class XSDElement<T> {
                 // not a complex element
                 if (e2.getCode().equals(WSDLExceptionCode.XSD_NODE_IS_ELEMENT)) {
                     element = Utils.getFirstXMLChild(element);
+                    element.setUserData("tns", tns, null);
                     xsdElement = XSDElement.getInstance(manager, element);
                     xsdElement.setName(name);
+                    // String tns = (String) element.getUserData("tns");
+                    xsdElement.setTargetNamespace(tns);
                     return xsdElement;
                 }
                 throw e;
@@ -189,6 +209,10 @@ public abstract class XSDElement<T> {
         // return null;
     }
 
+    private void setTargetNamespace(String tns) {
+        this.targetNamespace = tns;
+    }
+
     private static XSDComplexElement getInstanceForComplexElement(WSDLManagerRetrieval manager, Node node)
             throws WSDLException, XPathExpressionException, SAXException, IOException, ParserConfigurationException {
         String nodeName = Utils.splitPrefixes(node.getNodeName())[1];
@@ -222,8 +246,7 @@ public abstract class XSDElement<T> {
         else if (nodeName.equals("union"))
             return new XSDUnion(manager, node);
         else {
-            System.out.println("aasadasdsadasdsadasd");
-            System.out.println(nodeName);
+
             throw new WSDLException(WSDLExceptionCode.XSD_NOT_COMPLEX_TYPE);
         }
     }
@@ -237,7 +260,6 @@ public abstract class XSDElement<T> {
             element = new XSDSimpleElement(manager, node, simpleType);
             return element;
         } catch (WSDLException e) {
-            System.out.println(type);
             throw new WSDLException(WSDLExceptionCode.XSD_NOT_SIMPLE_ELEMENT);
         }
 
@@ -391,6 +413,10 @@ public abstract class XSDElement<T> {
     }
 
     public void toESQL() {
-        ;
+        this.manager.getESQLManager().addComment(this.getNodeHelp());
+    }
+
+    public void explicitlySetTargetNameSpace(String targetTamespace) {
+        this.node.setUserData("EX_tns", targetTamespace, null);
     }
 }

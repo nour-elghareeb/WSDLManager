@@ -3,6 +3,7 @@ package ne.wsdlparse.esql;
 import java.util.Locale;
 
 import ne.wsdlparse.esql.constant.ESQLSource;
+import ne.wsdlparse.utility.ConsoleStyle;
 import ne.wsdlparse.xsd.constant.XSDSimpleElementType;
 
 public class ESQLSetterLine extends ESQLLine {
@@ -22,8 +23,18 @@ public class ESQLSetterLine extends ESQLLine {
 
     @Override
     String generate() {
-        return String.format(Locale.getDefault(), "%s.XMLNSC.%s = '' -- %s;", this.source.get(), this.xPath,
+        return String.format(Locale.getDefault(), "SET %s.XMLNSC.%s = '' -- %s;", this.source.get(), this.xPath,
                 this.xsdType.getDesc());
+    }
+
+    @Override
+    public void print() {
+        String placeholder = "SET %s.XMLNSC.%s = '' %s;%s";
+        System.out.printf(Locale.getDefault(), placeholder,
+                ConsoleStyle.addTextColor(this.source.get(), ConsoleStyle.Color.GREEN),
+                ConsoleStyle.addTextColor(this.xPath, ConsoleStyle.Color.BLUE),
+                ConsoleStyle.addTextColor("-- " + this.xsdType.getDesc(), ConsoleStyle.Color.LIGHT_GRAY),
+                System.getProperty("line.separator"));
     };
 
 }

@@ -7,4 +7,6 @@ public abstract class ESQLLine {
     }
 
     abstract String generate();
+
+    abstract public void print();
 }

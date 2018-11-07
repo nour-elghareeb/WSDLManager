@@ -50,8 +50,10 @@ public class ESQLManager {
         this.addPrefix(prefix);
     }
 
-    public void addComment() {
-
+    public void addComment(String comment) {
+        if (comment == null)
+            return;
+        this.block.addLine(new ESQLCommentLine(comment));
     }
 
     public void addParam(String prefix, String param, XSDSimpleElementType type) {
@@ -77,5 +79,9 @@ public class ESQLManager {
 
     public ESQLBlock getESQLBlock() {
         return this.block;
+    }
+
+    public void addEmptyLine(boolean allowMultiSuccessiveEmpty) {
+        this.block.addEmptyLine(allowMultiSuccessiveEmpty);
     }
 }

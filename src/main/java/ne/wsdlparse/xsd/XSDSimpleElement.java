@@ -22,12 +22,23 @@ public class XSDSimpleElement<T> extends XSDElement<T> {
 
     @Override
     public String getNodeHelp() {
-        return null;
+        return help;
     }
 
     @Override
     public void toESQL() {
-        this.manager.getESQLManager().addParam(this.prefix, this.name, this.simpleType);
+        super.toESQL();
+        String prefix = this.prefix;
+        if (this.prefix == null) {
+            String ns = this.getExplicitlySetTargetTamespace();
+            if (ns == null) {
+                ns = this.getTargetTamespace();
+            }
+            if (!this.manager.getTargetNameSpace().equals(ns)) {
+                prefix = this.manager.getPrefix(ns);
+            }
+        }
+        this.manager.getESQLManager().addParam(prefix, this.name, this.simpleType);
     }
 
     @Override
