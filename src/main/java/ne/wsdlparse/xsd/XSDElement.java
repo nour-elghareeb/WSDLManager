@@ -68,6 +68,7 @@ public abstract class XSDElement<T> {
         if (node == null)
             return null;
 
+        String nodeNameWithPrefix = node.getNodeName();
         String nodeName = Utils.splitPrefixes(node.getNodeName())[1];
         String name = Utils.getAttrValueFromNode(node, "name");
         String type = Utils.getAttrValueFromNode(node, "type");
@@ -83,9 +84,10 @@ public abstract class XSDElement<T> {
                 return xsdElement;
             } catch (WSDLException e) {
                 if (e.getCode().equals(WSDLExceptionCode.XSD_NOT_SIMPLE_ELEMENT)) {
-                    element = (Node) manager.getXSDManager().find(
-                            String.format(Locale.getDefault(), "/schema/*[@name='%s']", Utils.splitPrefixes(type)[1]),
-                            XPathConstants.NODE);
+
+                    element = (Node) manager.getXSDManager()
+                            .find(String.format(Locale.getDefault(), "/schema/*[name() != '%s' and @name = '%s']",
+                                    nodeNameWithPrefix, Utils.splitPrefixes(type)[1]), XPathConstants.NODE);
                     xsdElement = XSDElement.getInstance(manager, element);
                     tns = (String) element.getUserData("tns");
                     xsdElement.setName(name);

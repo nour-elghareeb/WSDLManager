@@ -70,4 +70,11 @@ public class ESQLBlock {
             this.elementsLines.add(new ESQLCommentLine(null));
         this.lastWasEmpty = true;
     }
+
+    public void clear() {
+        this.elementsLines.clear();
+        this.prefixes.clear();
+        this.nsDeclarations.clear();
+        this.lastWasEmpty = false;
+    }
 }

@@ -44,6 +44,7 @@ public class WSDLManager implements WSDLManagerRetrieval {
 
         try {
             this.namespaces.put("wsdl", "http://schemas.xmlsoap.org/wsdl/");
+            this.namespaces.put("soapenv", "http://schemas.xmlsoap.org/soap/envelope/");
             this.load(path);
         } catch (Exception ex) {
             ex.printStackTrace();

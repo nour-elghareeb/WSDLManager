@@ -17,14 +17,14 @@ import ne.wsdlparse.exception.WSDLExceptionCode;
 import ne.wsdlparse.xsd.XSDElement;
 
 public class WSDLMessage {
-    private String name;
+    protected String name;
     private boolean isExternal;
-    private WSDLManagerRetrieval manager;
-    private String prefix;
+    protected WSDLManagerRetrieval manager;
+    protected String prefix;
     public ArrayList<XSDElement> parts = new ArrayList<XSDElement>();
-    private Node node;
-    private Operation operation;
-    private WSDLProperty encodingStyle;
+    protected Node node;
+    protected Operation operation;
+    protected WSDLProperty encodingStyle;
 
     public WSDLMessage(WSDLManagerRetrieval manager, Operation operation, Node node)
             throws XPathExpressionException, WSDLException, SAXException, IOException, ParserConfigurationException {
@@ -76,12 +76,12 @@ public class WSDLMessage {
     }
 
     public void generateESQL() {
+        this.manager.getESQLManager().clearTree();
         this.manager.getESQLManager().levelUp(this.prefix, this.name);
         for (XSDElement element : this.parts) {
             element.toESQL();
         }
         this.manager.getESQLManager().levelDown(this.name, this.prefix);
-
     }
 
     private void loadDocumentParams()
@@ -154,7 +154,6 @@ public class WSDLMessage {
 
     private void loadElement(Node element)
             throws XPathExpressionException, SAXException, IOException, ParserConfigurationException, WSDLException {
-
         this.parts.add(XSDElement.getInstance(this.manager, element));
         // // Split element name from prfix
         // String[] elementName =

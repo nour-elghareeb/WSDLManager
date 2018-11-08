@@ -84,4 +84,13 @@ public class ESQLManager {
     public void addEmptyLine(boolean allowMultiSuccessiveEmpty) {
         this.block.addEmptyLine(allowMultiSuccessiveEmpty);
     }
+
+    public void clearTree() {
+        this.paramTree.clear();
+    }
+
+    public void clearAll() {
+        this.clearTree();
+        this.block.clear();
+    }
 }

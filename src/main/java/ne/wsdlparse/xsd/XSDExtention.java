@@ -14,6 +14,7 @@ import org.xml.sax.SAXException;
 import ne.wsdlparse.Utils;
 import ne.wsdlparse.WSDLManagerRetrieval;
 import ne.wsdlparse.exception.WSDLException;
+import java.lang.IndexOutOfBoundsException;
 
 public class XSDExtention extends XSDComplexElement<XSDElement<?>> {
     private String base;
@@ -46,14 +47,17 @@ public class XSDExtention extends XSDComplexElement<XSDElement<?>> {
                 base)).getChildren().get(0);
         // this.node.setUserData("tns", base.getUserData("tns"), null);
         super.loadChildren();
-        XSDComplexElement baseChild = (XSDComplexElement) getChildren().get(0);
-        String xxx = this.getTargetTamespace();
-        String yyy = baseChild.getTargetTamespace();
-        String zzz = baseElement.getTargetTamespace();
-        for (XSDElement el : (ArrayList<XSDComplexElement>) baseChild.getChildren()) {
-            el.explicitlySetTargetNameSpace(this.getTargetTamespace());
-            baseElement.addChild(el);
+        XSDComplexElement baseChild;
+        try {
+            baseChild = (XSDComplexElement) getChildren().get(0);
+            for (XSDElement el : (ArrayList<XSDComplexElement>) baseChild.getChildren()) {
+                el.explicitlySetTargetNameSpace(this.getTargetTamespace());
+                baseElement.addChild(el);
+            }
+        } catch (IndexOutOfBoundsException e) {
+
         }
+
         this.children = new ArrayList<XSDElement<XSDElement<?>>>();
         this.children.add(baseElement);
     }

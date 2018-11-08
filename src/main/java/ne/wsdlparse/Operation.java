@@ -8,6 +8,7 @@ import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpressionException;
 
 import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
 import ne.wsdlparse.exception.WSDLException;
@@ -17,7 +18,7 @@ public class Operation {
     private String name;
     private WSDLMessage request;
     private WSDLMessage response;
-    private WSDLMessage fault;
+    private WSDLMessage[] faults;
     private WSDLManagerRetrieval manager;
     private Node node;
     private PortType portType;
@@ -35,18 +36,18 @@ public class Operation {
         this.loadParams();
     }
 
-    private void loadParams() throws XPathExpressionException, WSDLException, SAXException, IOException, ParserConfigurationException {
+    private void loadParams()
+            throws XPathExpressionException, WSDLException, SAXException, IOException, ParserConfigurationException {
 
-        this.request = this.loadParamNode("input", request);
-        this.response = this.loadParamNode("output", response);
-        this.fault = this.loadParamNode("fault", fault);
+        this.loadParamNode("input", request);
+        this.loadParamNode("output", response);
+        this.loadFaultParams();
     }
 
     private void loadOperationDetails()
             throws XPathExpressionException, WSDLException, SAXException, IOException, ParserConfigurationException {
         this.request = new WSDLMessage(this.manager, this, null);
         this.response = new WSDLMessage(this.manager, this, null);
-        this.fault = new WSDLMessage(this.manager, this, null);
         Node operation = (Node) this.manager.getXPath()
                 .compile(String.format(Locale.getDefault(), "operation[@name='%s']", this.name))
                 .evaluate(this.portType.getPort().getBinding().getNode(), XPathConstants.NODE);
@@ -60,12 +61,16 @@ public class Operation {
                 .evaluate(operation, XPathConstants.NODE);
         Node output = (Node) this.manager.getXPath().compile(String.format(Locale.getDefault(), "output/body"))
                 .evaluate(operation, XPathConstants.NODE);
-        Node fault = (Node) this.manager.getXPath().compile(String.format(Locale.getDefault(), "fault/fault"))
-                .evaluate(operation, XPathConstants.NODE);
+        NodeList faults = (NodeList) this.manager.getXPath().compile(String.format(Locale.getDefault(), "fault/fault"))
+                .evaluate(operation, XPathConstants.NODESET);
 
         this.request.setEncodingStyle(Utils.getAttrValueFromNode(input, "use"));
         this.response.setEncodingStyle(Utils.getAttrValueFromNode(output, "use"));
-        this.fault.setEncodingStyle(Utils.getAttrValueFromNode(fault, "use"));
+        this.faults = new WSDLMessage[faults.getLength()];
+        for (int i = 0; i < faults.getLength(); i++) {
+            this.faults[i] = new FaultMessage(this.manager, this, null);
+            this.faults[i].setEncodingStyle(Utils.getAttrValueFromNode(faults.item(i), "use"));
+        }
     }
 
     private void setStyle(String value) {
@@ -86,14 +91,8 @@ public class Operation {
         return this.style;
     }
 
-    private WSDLMessage loadParamNode(String paramName, WSDLMessage message)
+    private void loadParamNode(Node paramNode, WSDLMessage message)
             throws XPathExpressionException, WSDLException, SAXException, IOException, ParserConfigurationException {
-        // Loading param message either [input], [output], [fault]
-        Node paramNode = (Node) this.manager.getXPath().compile(String.format(Locale.getDefault(), "%s", paramName))
-                .evaluate(this.node, XPathConstants.NODE);
-        if (paramNode == null) {
-            return null;
-        }
         // get message name...
         String paramMsgName[] = Utils.splitPrefixes(Utils.getAttrValueFromNode(paramNode, "message"));
         // get message node
@@ -101,27 +100,52 @@ public class Operation {
                 .compile(String.format(Locale.getDefault(), "/definitions/message[@name='%s']", paramMsgName[1]))
                 .evaluate(this.manager.getWSDLFile(), XPathConstants.NODE);
         if (messageNode == null)
-            return null;
+            return;
 
         message.setNode(messageNode);
         message.setName(Utils.getAttrValueFromNode(paramNode, "message"));
         message.loadParams();
 
-        return message;
+    }
+
+    private void loadFaultParams()
+            throws XPathExpressionException, WSDLException, SAXException, IOException, ParserConfigurationException {
+        NodeList faults = (NodeList) this.manager.getXPath().compile("fault").evaluate(this.node,
+                XPathConstants.NODESET);
+        if (faults.getLength() == 0) {
+            this.faults = new WSDLMessage[] { new FaultMessage(this.manager, this, null) };
+            return;
+        }
+        for (int i = 0; i < faults.getLength(); i++) {
+            this.loadParamNode(faults.item(i), this.faults[i]);
+        }
+
+    }
+
+    private void loadParamNode(String paramName, WSDLMessage message)
+            throws XPathExpressionException, WSDLException, SAXException, IOException, ParserConfigurationException {
+        // Loading param message either [input], [output], [fault]
+        Node paramNode = (Node) this.manager.getXPath().compile(String.format(Locale.getDefault(), "%s", paramName))
+                .evaluate(this.node, XPathConstants.NODE);
+        if (paramNode == null) {
+            return;
+        }
+        this.loadParamNode(paramNode, message);
+
     }
 
     /**
      * @return the fault
      */
-    public WSDLMessage getFault() {
-        return fault;
+    public WSDLMessage[] getFault() {
+        return this.faults;
     }
 
     /**
-     * @param fault the fault to set
+     * @return the fault
      */
-    public void setFault(WSDLMessage fault) {
-        this.fault = fault;
+    public WSDLMessage getFault(int index) {
+        return this.faults[index];
     }
 
     /**
@@ -132,24 +156,10 @@ public class Operation {
     }
 
     /**
-     * @param response the response to set
-     */
-    public void setResponse(WSDLMessage response) {
-        this.response = response;
-    }
-
-    /**
      * @return the request
      */
     public WSDLMessage getRequest() {
         return request;
-    }
-
-    /**
-     * @param request the request to set
-     */
-    public void setRequest(WSDLMessage request) {
-        this.request = request;
     }
 
     public void setName(String name) {
