@@ -77,11 +77,11 @@ public class WSDLMessage {
 
     public void generateESQL() {
         this.manager.getESQLManager().clearTree();
-        this.manager.getESQLManager().levelUp(this.prefix, this.name);
+        this.manager.getESQLManager().levelUp(this.prefix, this.name, this.parts.size() != 0);
         for (XSDElement element : this.parts) {
             element.toESQL();
         }
-        this.manager.getESQLManager().levelDown(this.name, this.prefix);
+        this.manager.getESQLManager().levelDown(this.name, this.prefix, this.parts.size() != 0);
     }
 
     private void loadDocumentParams()

@@ -12,6 +12,7 @@ import org.xml.sax.SAXException;
 
 import ne.wsdlparse.Utils;
 import ne.wsdlparse.WSDLManagerRetrieval;
+import ne.wsdlparse.constant.ESQLVerbosity;
 import ne.wsdlparse.exception.WSDLException;
 import ne.wsdlparse.exception.WSDLExceptionCode;
 import ne.wsdlparse.xsd.constant.XSDSimpleElementType;
@@ -31,6 +32,8 @@ public abstract class XSDElement<T> {
     protected String xPath = "";
     protected boolean isSkippable = false;
     private String targetNamespace;
+    protected boolean nullifyChildrenName;
+    private boolean printable;
 
     public abstract String getNodeHelp();
 
@@ -76,6 +79,8 @@ public abstract class XSDElement<T> {
 
         Node element = node;
         Node elementTypeNode = null;
+        if (nodeName.equals("attribute"))
+            return null;
         String tns = (String) element.getUserData("tns");
         if (type != null) {
             try {
@@ -248,7 +253,6 @@ public abstract class XSDElement<T> {
         else if (nodeName.equals("union"))
             return new XSDUnion(manager, node);
         else {
-
             throw new WSDLException(WSDLExceptionCode.XSD_NOT_COMPLEX_TYPE);
         }
     }
@@ -259,7 +263,10 @@ public abstract class XSDElement<T> {
 
         try {
             XSDSimpleElementType simpleType = XSDSimpleElementType.parse(type);
-            element = new XSDSimpleElement(manager, node, simpleType);
+            if (simpleType.equals(XSDSimpleElementType.LIST))
+                element = new XSDList(manager, node);
+            else
+                element = new XSDSimpleElement(manager, node, simpleType);
             return element;
         } catch (WSDLException e) {
             throw new WSDLException(WSDLExceptionCode.XSD_NOT_SIMPLE_ELEMENT);
@@ -415,10 +422,28 @@ public abstract class XSDElement<T> {
     }
 
     public void toESQL() {
-        this.manager.getESQLManager().addComment(this.getNodeHelp());
+
+        this.addHelpComment();
+    }
+
+    protected void addHelpComment() {
+        this.manager.getESQLManager().addComment(ESQLVerbosity.VALUE_HELP, this.getNodeHelp());
+        if (this.minOccurs == 0) {
+            this.manager.getESQLManager().addComment(ESQLVerbosity.MULTIPLICITY, "Optional");
+        }
     }
 
     public void explicitlySetTargetNameSpace(String targetTamespace) {
         this.node.setUserData("EX_tns", targetTamespace, null);
     }
+
+    public void nullifyChildrenName() {
+        this.name = null;
+        this.prefix = null;
+    }
+
+    protected boolean hasPrintable() {
+        return false;
+    }
+
 }

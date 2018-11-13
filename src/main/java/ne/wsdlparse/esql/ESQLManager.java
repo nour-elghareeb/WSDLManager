@@ -6,6 +6,7 @@ import java.util.HashSet;
 
 import ne.wsdlparse.Utils;
 import ne.wsdlparse.WSDLManager;
+import ne.wsdlparse.constant.ESQLVerbosity;
 import ne.wsdlparse.xsd.constant.XSDSimpleElementType;
 
 public class ESQLManager {
@@ -37,7 +38,7 @@ public class ESQLManager {
         return false;
     }
 
-    public void levelUp(String prefix, String param) {
+    public void levelUp(String prefix, String param, boolean hasChildren) {
         if (param == null) {
             return;
         }
@@ -45,15 +46,24 @@ public class ESQLManager {
             return;
         // this.levelIsRaised = true;
         // this.isRaised.put(Utils.getParamWithPrefix(param, prefix), true);
+
         this.level++;
         this.paramTree.add(Utils.getParamWithPrefix(prefix, param));
         this.addPrefix(prefix);
+        if (hasChildren)
+            this.addLevelUpComment(param);
     }
 
-    public void addComment(String comment) {
+    public void addComment(ESQLVerbosity verbosity, String title, String comment) {
         if (comment == null)
             return;
-        this.block.addLine(new ESQLCommentLine(comment));
+        this.block.addLine(new ESQLCommentLine(verbosity, title, comment));
+    }
+
+    public void addComment(ESQLVerbosity verbosity, String comment) {
+        if (comment == null)
+            return;
+        this.block.addLine(new ESQLCommentLine(verbosity, comment));
     }
 
     public void addParam(String prefix, String param, XSDSimpleElementType type) {
@@ -66,15 +76,18 @@ public class ESQLManager {
         this.block.addLine(line);
     }
 
-    public void levelDown(String param, String prefix) {
+    public void levelDown(String param, String prefix, boolean hasChildren) {
         // if (!this.levelIsRaised)
         // return;
         if (param == null)
             return;
+
         String nameWithPrefix = Utils.getParamWithPrefix(prefix, param);
+        if (this.paramTree.contains(nameWithPrefix) && hasChildren)
+            this.addLevelDownComment(param);
         this.paramTree.remove(nameWithPrefix);
-        this.levelIsRaised = false;
         this.level--;
+
     }
 
     public ESQLBlock getESQLBlock() {
@@ -92,5 +105,30 @@ public class ESQLManager {
     public void clearAll() {
         this.clearTree();
         this.block.clear();
+    }
+
+    public void addLevelUpComment(String name) {
+        if (name == null)
+            return;
+        String levelSplitter = "";
+        for (int i = 0; i < this.paramTree.size(); i++) {
+            levelSplitter += "====>> ";
+        }
+        this.addComment(ESQLVerbosity.STRUCTURE, levelSplitter + name);
+    }
+
+    public void addLevelDownComment(String nameWithPrefix) {
+        if (nameWithPrefix == null)
+            return;
+        String levelSplitter = "";
+        for (int i = 0; i < this.paramTree.size(); i++) {
+            levelSplitter += "<<==== ";
+        }
+        if (!levelSplitter.isEmpty())
+            this.addComment(ESQLVerbosity.STRUCTURE, levelSplitter + nameWithPrefix);
+    }
+
+    public void setVerbosity(ESQLVerbosity... verbosity) {
+        this.block.setVerbosity(verbosity);
     }
 }

@@ -1,7 +1,6 @@
 package ne.wsdlparse.xsd;
 
 import java.io.IOException;
-import java.util.Locale;
 
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.xpath.XPathExpressionException;
@@ -11,6 +10,7 @@ import org.xml.sax.SAXException;
 
 import ne.wsdlparse.WSDLManagerRetrieval;
 import ne.wsdlparse.exception.WSDLException;
+import ne.wsdlparse.xsd.constant.XSDSimpleElementType;
 
 public class XSDAnnotation extends XSDComplexElement {
 
@@ -21,7 +21,21 @@ public class XSDAnnotation extends XSDComplexElement {
 
     @Override
     public String getNodeHelp() {
-        return null;
+        return this.help;
+    }
+
+    @Override
+    protected boolean validateChild(Node child, XSDElement element)
+            throws XPathExpressionException, SAXException, IOException, ParserConfigurationException, WSDLException {
+        // return super.validateChild(child, element);
+        XSDSimpleElement simpleElement = (XSDSimpleElement) element;
+        XSDSimpleElementType elementType = simpleElement.getSimpleType();
+        switch (elementType) {
+        case DOCUMENTATION:
+            this.help = child.getTextContent();
+            return true;
+        }
+        return false;
     }
 
     @Override

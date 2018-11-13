@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 
 import ne.wsdlparse.WSDLManagerRetrieval;
+import ne.wsdlparse.constant.ESQLVerbosity;
 import ne.wsdlparse.esql.constant.ESQLDataType;
 import ne.wsdlparse.esql.constant.ESQLSource;
 
@@ -13,6 +14,7 @@ public class ESQLBlock {
     private ArrayList<ESQLLine> nsDeclarations;
     private HashSet<String> prefixes;
     private boolean lastWasEmpty = false;
+    private ESQLVerbosity[] verbosities = ESQLVerbosity.values();;
 
     public ESQLBlock(WSDLManagerRetrieval manager) {
         this.manager = manager;
@@ -46,7 +48,17 @@ public class ESQLBlock {
             line.print();
         }
         for (ESQLLine line : this.elementsLines) {
+            if (line instanceof ESQLCommentLine) {
+                for (ESQLVerbosity verbosity : this.verbosities) {
+                    if (verbosity.equals(((ESQLCommentLine) line).getVerbosity())) {
+                        line.print();
+                        break;
+                    }
+                }
+                continue;
+            }
             line.print();
+
         }
     }
 
@@ -59,6 +71,14 @@ public class ESQLBlock {
             builder.append(newLine);
         }
         for (ESQLLine line : this.elementsLines) {
+            if (line instanceof ESQLCommentLine) {
+                for (ESQLVerbosity verbosity : this.verbosities) {
+                    if (verbosity.equals(((ESQLCommentLine) line).getVerbosity())) {
+                        break;
+                    }
+                }
+                continue;
+            }
             builder.append(line.generate());
             builder.append(newLine);
         }
@@ -67,7 +87,7 @@ public class ESQLBlock {
 
     public void addEmptyLine(boolean allowMultiSuccessiveEmpty) {
         if (!this.lastWasEmpty || (allowMultiSuccessiveEmpty && this.lastWasEmpty))
-            this.elementsLines.add(new ESQLCommentLine(null));
+            this.elementsLines.add(new ESQLCommentLine(ESQLVerbosity.EMPTY, null));
         this.lastWasEmpty = true;
     }
 
@@ -76,5 +96,9 @@ public class ESQLBlock {
         this.prefixes.clear();
         this.nsDeclarations.clear();
         this.lastWasEmpty = false;
+    }
+
+    public void setVerbosity(ESQLVerbosity... verbosity) {
+        this.verbosities = verbosity;
     }
 }

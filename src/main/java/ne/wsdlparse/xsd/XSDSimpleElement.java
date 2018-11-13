@@ -46,4 +46,12 @@ public class XSDSimpleElement<T> extends XSDElement<T> {
         return true;
     }
 
+    public XSDSimpleElementType getSimpleType() {
+        return this.simpleType;
+    }
+
+    @Override
+    protected boolean hasPrintable() {
+        return true;
+    }
 }

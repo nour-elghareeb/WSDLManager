@@ -20,12 +20,13 @@ public enum XSDSimpleElementType {
     UNSIGNED_BYTE("unsignedByte", "An unsigned 8-bit integer", String.class),
     DOUBLE("double", "a 64-bit floating-point", String.class), FLOAT("float", "32-bit floating-point", String.class),
     BASE64_BINARY("base64Binary", "A base64-encoded binary data", String.class),
-
-    STRING("string", "String", String.class), ANY_URI("anyURI", "URI string, ie: http://example.com", String.class),
+    TOKEN("token", "String with no more than one whitespace", String.class), STRING("string", "String", String.class),
+    ANY_URI("anyURI", "URI string, ie: http://example.com", String.class),
     DATE("date", "Date format example: YYYY-MM-DD", String.class),
     BOOLEAN("boolean", "Boolean value, true or false", String.class),
     HEX_BINRARY("hexBinary", "hexadecimal-encoded binary data", String.class), APP_INFO("appInfo", "", String.class),
-    DOCUMENTATION("documentation", "", String.class);
+    DOCUMENTATION("documentation", "", String.class), LIST("list", "list seperated by a space", String.class),
+    UNION_CHILDREN("", "Union of multiple types.", String.class);
 
     private String desc;
     private String type;

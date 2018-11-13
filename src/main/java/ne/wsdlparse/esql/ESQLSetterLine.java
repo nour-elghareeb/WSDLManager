@@ -10,6 +10,7 @@ public class ESQLSetterLine extends ESQLLine {
     private XSDSimpleElementType xsdType;
     private ESQLSource source = ESQLSource.OUTPUT;
     private String xPath;
+    private boolean inputMode;
 
     public ESQLSetterLine(String xPath, XSDSimpleElementType xsdType) {
         super();
@@ -19,6 +20,9 @@ public class ESQLSetterLine extends ESQLLine {
 
     public void setSource(ESQLSource source) {
         this.source = source;
+    }
+    public void setInputMode(boolean useReference){
+        this.inputMode = useReference;
     }
 
     @Override

@@ -1,7 +1,6 @@
 package ne.wsdlparse;
 
-import ne.wsdlparse.esql.constant.ESQLSource;
-import ne.wsdlparse.utility.ConsoleStyle;
+import ne.wsdlparse.esql.constant.ESQLSource;;
 
 /**
  * Hello world!
@@ -9,15 +8,16 @@ import ne.wsdlparse.utility.ConsoleStyle;
  */
 public class App {
     public static void main(String[] args) {
+
         try {
-            WSDLManager wsdl = new WSDLManager(args[3]);
+            WSDLManager wsdl = new WSDLManager(args[0]);
             for (Service service : wsdl.getServices()) {
                 for (Port port : service.getPorts()) {
                     PortType portType = port.getType();
                     for (Operation operation : portType.getOperations()) {
                         System.out.println("Operation: " + operation.getName());
                         System.out.println("Request: ---------------");
-                        operation.getFault()[0].generateESQL();
+                        operation.getRequest().generateESQL();
                         // operation.getFault()[1].generateESQL();
 
                         // operation.getResponse().generateESQL();
@@ -31,9 +31,12 @@ public class App {
                 }
             }
             wsdl.getESQLManager().getESQLBlock().print(ESQLSource.OUTPUT);
-        } catch (Exception e) {
+        } catch (
+
+        Exception e) {
             e.printStackTrace();
         }
 
     }
+
 }

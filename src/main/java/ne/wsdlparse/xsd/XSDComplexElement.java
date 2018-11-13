@@ -17,6 +17,8 @@ import ne.wsdlparse.exception.WSDLException;
 public abstract class XSDComplexElement<T> extends XSDElement<T> {
 
     protected ArrayList<XSDElement<T>> children = new ArrayList<XSDElement<T>>();
+    protected boolean hasRestriction = false;
+    protected XSDRestriction restriction;
 
     public XSDComplexElement(WSDLManagerRetrieval manager, Node node, Class<?> classType)
             throws XPathExpressionException, SAXException, IOException, ParserConfigurationException, WSDLException {
@@ -36,6 +38,16 @@ public abstract class XSDComplexElement<T> extends XSDElement<T> {
         this.children.add(element);
     }
 
+    protected boolean validateChild(Node child, XSDElement element)
+            throws XPathExpressionException, SAXException, IOException, ParserConfigurationException, WSDLException {
+
+        if (element instanceof XSDRestriction) {
+            this.hasRestriction = true;
+            this.restriction = (XSDRestriction) element;
+        }
+        return true;
+    }
+
     protected void loadChildren()
             throws XPathExpressionException, SAXException, IOException, ParserConfigurationException, WSDLException {
         Node child = Utils.getFirstXMLChild(this.node);
@@ -43,14 +55,16 @@ public abstract class XSDComplexElement<T> extends XSDElement<T> {
         while (child != null) {
             child.setUserData("tns", this.node.getUserData("tns"), null);
             XSDElement element = XSDElement.getInstance(this.manager, child);
-            this.children.add(element);
+
+            if (element != null && this.validateChild(child, element))
+                this.children.add(element);
             child = Utils.getNextXMLSibling(child);
         }
     }
 
     @Override
     public void toESQL() {
-        super.toESQL();
+
         String prefix = this.prefix;
         if (this.prefix == null) {
             String ns = this.getExplicitlySetTargetTamespace();
@@ -61,13 +75,15 @@ public abstract class XSDComplexElement<T> extends XSDElement<T> {
                 prefix = this.manager.getPrefix(ns);
             }
         }
+        super.toESQL();
 
-        this.manager.getESQLManager().levelUp(prefix, this.name);
+        this.manager.getESQLManager().levelUp(prefix, this.name, this.hasPrintable());
+
         for (XSDElement element : this.children) {
             element.toESQL();
         }
         // this.manager.getESQLManager().addEmptyLine(false);
-        this.manager.getESQLManager().levelDown(this.name, prefix);
+        this.manager.getESQLManager().levelDown(this.name, prefix, this.hasPrintable());
 
         // String temp = xPath;
         // if (name != null && !xPath.contains(this.name))
@@ -85,4 +101,22 @@ public abstract class XSDComplexElement<T> extends XSDElement<T> {
         return help;
     }
 
+
+
+    @Override
+    public void nullifyChildrenName() {
+        super.nullifyChildrenName();
+        this.name = null;
+        this.prefix = null;
+        for (XSDElement element : this.children) {
+            element.nullifyChildrenName();
+        }
+    }
+    @Override
+    protected boolean hasPrintable() {
+        for (XSDElement element : this.children){
+            if (element.hasPrintable()) return true;
+        }
+        return false;
+    }
 }

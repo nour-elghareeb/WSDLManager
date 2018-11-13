@@ -14,10 +14,11 @@ import org.xml.sax.SAXException;
 import ne.wsdlparse.Utils;
 import ne.wsdlparse.WSDLManagerRetrieval;
 import ne.wsdlparse.exception.WSDLException;
-import java.lang.IndexOutOfBoundsException;
+import ne.wsdlparse.xsd.constant.XSDSimpleElementType;
 
 public class XSDExtention extends XSDComplexElement<XSDElement<?>> {
     private String base;
+    private XSDSimpleElementType simpleType;
 
     public XSDExtention(WSDLManagerRetrieval manager, Node node)
             throws XPathExpressionException, SAXException, IOException, ParserConfigurationException, WSDLException {
@@ -41,29 +42,38 @@ public class XSDExtention extends XSDComplexElement<XSDElement<?>> {
     protected void loadChildren()
             throws XPathExpressionException, SAXException, IOException, ParserConfigurationException, WSDLException {
         this.setBase(Utils.getAttrValueFromNode(node, "base"));
-        Node base = (Node) this.manager.getXSDManager()
-                .find(String.format(Locale.getDefault(), "/schema/*[@name='%s']", this.base), XPathConstants.NODE);
-        XSDComplexElement baseElement = (XSDComplexElement) ((XSDComplexElement) XSDElement.getInstance(this.manager,
-                base)).getChildren().get(0);
-        // this.node.setUserData("tns", base.getUserData("tns"), null);
-        super.loadChildren();
-        XSDComplexElement baseChild;
         try {
-            baseChild = (XSDComplexElement) getChildren().get(0);
-            for (XSDElement el : (ArrayList<XSDComplexElement>) baseChild.getChildren()) {
-                el.explicitlySetTargetNameSpace(this.getTargetTamespace());
-                baseElement.addChild(el);
-            }
-        } catch (IndexOutOfBoundsException e) {
+            this.simpleType = XSDSimpleElementType.parse(this.base);
+        } catch (WSDLException e) {
+            Node base = (Node) this.manager.getXSDManager()
+                    .find(String.format(Locale.getDefault(), "/schema/*[@name='%s']", this.base), XPathConstants.NODE);
+            XSDComplexElement baseElement = (XSDComplexElement) ((XSDComplexElement) XSDElement
+                    .getInstance(this.manager, base)).getChildren().get(0);
+            // this.node.setUserData("tns", base.getUserData("tns"), null);
+            super.loadChildren();
+            XSDComplexElement baseChild;
+            try {
+                baseChild = (XSDComplexElement) getChildren().get(0);
+                for (XSDElement el : (ArrayList<XSDComplexElement>) baseChild.getChildren()) {
+                    el.explicitlySetTargetNameSpace(this.getTargetTamespace());
+                    baseElement.addChild(el);
+                }
+            } catch (IndexOutOfBoundsException e2) {
 
+            }
+
+            this.children = new ArrayList<XSDElement<XSDElement<?>>>();
+            this.children.add(baseElement);
         }
 
-        this.children = new ArrayList<XSDElement<XSDElement<?>>>();
-        this.children.add(baseElement);
     }
 
     @Override
     protected Boolean isESQLPrintable() {
         return true;
+    }
+
+    public XSDSimpleElementType getSimpleType() {
+        return this.simpleType;
     }
 }
