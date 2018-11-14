@@ -50,8 +50,13 @@ public class XSDComplexType<T> extends XSDComplexElement<XSDElement<?>> {
             super.toESQL();
             return;
         }
-        if (this.hasRestriction || this.hasList)
+        if (this.hasRestriction) {
             super.toESQL();
-        this.manager.getESQLManager().addParam(this.prefix, this.name, this.simpleType);
+
+        } else if (this.hasList) {
+            super.toESQL();
+        }
+        String val = this.fixedValue == null ? this.defaultValue : this.fixedValue;
+        this.manager.getESQLManager().addParam(this.prefix, this.name, this.simpleType, val);
     }
 }

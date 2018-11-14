@@ -10,13 +10,14 @@ import org.xml.sax.SAXException;
 
 import ne.wsdlparse.WSDLManagerRetrieval;
 import ne.wsdlparse.exception.WSDLException;
+import ne.wsdlparse.xsd.constant.XSDSimpleElementType;
 
-public class XSDAny extends XSDComplexElement<Void> {
+public class XSDAny extends XSDSimpleElement<Void> {
     protected boolean isSkippable = true;
 
-    public XSDAny(WSDLManagerRetrieval manager, Node node)
-            throws XPathExpressionException, SAXException, IOException, ParserConfigurationException, WSDLException {
-        super(manager, node, XSDAny.class);
+    public XSDAny(WSDLManagerRetrieval manager, Node node){
+
+        super(manager, node, XSDSimpleElementType.ANY);
     }
 
     @Override
@@ -28,5 +29,9 @@ public class XSDAny extends XSDComplexElement<Void> {
     protected Boolean isESQLPrintable() {
         return false;
     }
-
+    @Override
+    public void toESQL() {
+        // super.toESQL();
+        this.manager.getESQLManager().addParam(this.prefix, "", XSDSimpleElementType.ANY, null);
+    }
 }

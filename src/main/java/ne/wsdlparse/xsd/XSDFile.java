@@ -1,10 +1,12 @@
 package ne.wsdlparse.xsd;
 
+import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -25,7 +27,6 @@ import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
-import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
 import ne.wsdlparse.Utils;
@@ -46,6 +47,29 @@ public class XSDFile {
 
     public XSDFile(String filePath, String namespace) throws FileNotFoundException, SAXException, IOException,
             ParserConfigurationException, XPathExpressionException {
+        if (Utils.validateURI(filePath)) {
+
+            String dir = System.getProperty("java.io.tmpdir");
+            try {
+                String[] temp = filePath.split("/");
+                File filetemp = new File(dir + "/" + temp[temp.length - 1]);
+                if (!filetemp.exists()) {
+
+                    BufferedInputStream in = new BufferedInputStream(new URL(filePath).openStream());
+                    FileOutputStream fileOutputStream = new FileOutputStream(filetemp);
+                    byte dataBuffer[] = new byte[1024];
+                    int bytesRead;
+                    while ((bytesRead = in.read(dataBuffer, 0, 1024)) != -1) {
+                        fileOutputStream.write(dataBuffer, 0, bytesRead);
+                    }
+                }
+                filePath = filetemp.getAbsolutePath();
+            } catch (Exception e) {
+                e.printStackTrace();
+                System.exit(1);
+            }
+        }
+
         this.filePath = filePath;
         this.targetNS = namespace;
         File file = new File(filePath);
@@ -74,14 +98,22 @@ public class XSDFile {
 
     private void _import(String filePath, String namespace) throws FileNotFoundException, XPathExpressionException,
             SAXException, IOException, ParserConfigurationException {
-        this.imports
-                .add(new XSDFile(String.format(Locale.getDefault(), "%s/%s", this.workingdir, filePath), namespace));
+        if (Utils.validateURI(filePath)) {
+            this.imports.add(new XSDFile(filePath, namespace));
+        } else {
+            this.imports.add(
+                    new XSDFile(String.format(Locale.getDefault(), "%s/%s", this.workingdir, filePath), namespace));
+        }
     }
 
     private void include(String filePath) throws FileNotFoundException, SAXException, IOException,
             ParserConfigurationException, XPathExpressionException {
-        this.includes.add(
-                new XSDFile(String.format(Locale.getDefault(), "%s/%s", this.workingdir, filePath), this.targetNS));
+        if (Utils.validateURI(filePath)) {
+            this.includes.add(new XSDFile(filePath, this.targetNS));
+        } else {
+            this.includes.add(
+                    new XSDFile(String.format(Locale.getDefault(), "%s/%s", this.workingdir, filePath), this.targetNS));
+        }
     }
 
     private void load(String filePath) throws FileNotFoundException, SAXException, IOException,
@@ -171,6 +203,8 @@ public class XSDFile {
     }
 
     public Object find(String xpath, Object source, QName returnType) throws XPathExpressionException {
+        if (source == null)
+            return null;
         return this.xPath.compile(xpath).evaluate(source, returnType);
     }
 

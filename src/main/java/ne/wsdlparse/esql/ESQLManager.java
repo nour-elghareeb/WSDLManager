@@ -66,13 +66,17 @@ public class ESQLManager {
         this.block.addLine(new ESQLCommentLine(verbosity, comment));
     }
 
-    public void addParam(String prefix, String param, XSDSimpleElementType type) {
+    public void addParam(String prefix, String param, XSDSimpleElementType type, String defaultValue) {
         if (param == null)
             return;
         this.addPrefix(prefix);
-        ESQLSetterLine line = new ESQLSetterLine(
-                "".concat(String.join(".", this.paramTree).concat(".").concat(Utils.getParamWithPrefix(prefix, param))),
-                type);
+        ESQLSetterLine line;
+        if (param.isEmpty())
+            line = new ESQLSetterLine(String.join(".", this.paramTree), type, defaultValue);
+        else
+            line = new ESQLSetterLine("".concat(
+                    String.join(".", this.paramTree).concat(".").concat(Utils.getParamWithPrefix(prefix, param))),
+                    type, defaultValue);
         this.block.addLine(line);
     }
 

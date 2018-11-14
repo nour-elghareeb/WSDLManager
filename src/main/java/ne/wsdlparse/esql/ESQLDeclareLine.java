@@ -24,7 +24,7 @@ public class ESQLDeclareLine extends ESQLLine {
     }
 
     @Override
-    String generate() {
+    String generate(boolean useColors) {
         return String.format(Locale.getDefault(), "DECLARE %s %s '%s';", this.param, this.type.getValue(),
                 this.defaultValue);
     }

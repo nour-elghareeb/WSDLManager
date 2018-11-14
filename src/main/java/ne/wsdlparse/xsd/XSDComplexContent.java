@@ -27,4 +27,7 @@ public class XSDComplexContent extends XSDComplexElement<XSDElement<?>> {
     protected Boolean isESQLPrintable() {
         return true;
     }
+
+
+
 }

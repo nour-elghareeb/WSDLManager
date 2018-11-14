@@ -2,8 +2,10 @@ package ne.wsdlparse.xsd;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Locale;
 
 import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpressionException;
 
 import org.w3c.dom.Node;
@@ -43,7 +45,7 @@ public class XSDRestriction extends XSDComplexElement<XSDElement> {
     // TODO: fetch base and load children...
     @Override
     protected void loadChildren()
-            throws XPathExpressionException, SAXException, IOException, ParserConfigurationException {
+            throws XPathExpressionException, SAXException, IOException, ParserConfigurationException, WSDLException {
         this.setBase(Utils.getAttrValueFromNode(this.node, "base"));
         try {
             // check if simple content
@@ -57,11 +59,19 @@ public class XSDRestriction extends XSDComplexElement<XSDElement> {
             }
 
         } catch (WSDLException e) {
-            e.printStackTrace();
+            Node base = (Node) this.manager.getXSDManager()
+                    .find(String.format(Locale.getDefault(), "/schema/*[@name='%s']", this.base), XPathConstants.NODE);
+            if (base == null) {
+                if (this.base.toLowerCase().equals("array")) {
+                    XSDElement any = new XSDAny(this.manager, null);
+                    this.children.add(any);
+                }
+            }else{
+                super.loadChildren();
+            }
+            ;
         }
-        // Node base = (Node) this.manager.getXSDManager()
-        // .find(String.format(Locale.getDefault(), "/schema/*[@name='%s']", this.base),
-        // XPathConstants.NODE);
+
     }
 
     private void addRestrictionParam(Node paramNode) {
@@ -167,6 +177,12 @@ public class XSDRestriction extends XSDComplexElement<XSDElement> {
 
     @Override
     public void toESQL() {
+        if (getRestrictionParams() == null) {
+            if (children == null)
+                return;
+            super.toESQL();
+            return;
+        };
         for (XSDRestrictionParam param : getRestrictionParams()) {
             this.manager.getESQLManager().addComment(ESQLVerbosity.VALUE_HELP,
                     ConsoleStyle.addTextColor("Restriction: ", ConsoleStyle.Color.RED),

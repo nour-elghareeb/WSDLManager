@@ -42,12 +42,19 @@ public class ESQLBlock {
         }
     }
 
-    public void print(ESQLSource type) {
+    public void printOutputSetters() {
+        this.printESQL(ESQLSource.OUTPUT, true);
+    }
+    private void printESQL(ESQLSource source, boolean useRef){
         this.generateNSLines();
         for (ESQLLine line : this.nsDeclarations) {
+            line.setSource(source);
+            line.useReferences(useRef);
             line.print();
         }
         for (ESQLLine line : this.elementsLines) {
+            line.setSource(source);
+            line.useReferences(useRef);
             if (line instanceof ESQLCommentLine) {
                 for (ESQLVerbosity verbosity : this.verbosities) {
                     if (verbosity.equals(((ESQLCommentLine) line).getVerbosity())) {
@@ -61,13 +68,19 @@ public class ESQLBlock {
 
         }
     }
+    public void printInputVariables() {
+        this.printESQL(ESQLSource.INPUT, false);
+    }
+    public void printInputReferences() {
+        this.printESQL(ESQLSource.INPUT, true);
+    }
 
     public String generate(ESQLSource type) {
         this.generateNSLines();
         StringBuilder builder = new StringBuilder();
         String newLine = System.getProperty("line.separator");
         for (ESQLLine line : this.nsDeclarations) {
-            builder.append(line.generate());
+            builder.append(line.generate(false));
             builder.append(newLine);
         }
         for (ESQLLine line : this.elementsLines) {
@@ -79,7 +92,7 @@ public class ESQLBlock {
                 }
                 continue;
             }
-            builder.append(line.generate());
+            builder.append(line.generate(false));
             builder.append(newLine);
         }
         return builder.toString();

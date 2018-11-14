@@ -23,7 +23,7 @@ public abstract class XSDElement<T> {
     protected T value;
     protected int maxOccurs = -1;
     protected int minOccurs = -1;
-    protected T defaultValue;
+    protected String defaultValue;
     protected boolean nillable;
     protected Class<?> type;
     protected String prefix = "";
@@ -34,9 +34,9 @@ public abstract class XSDElement<T> {
     private String targetNamespace;
     protected boolean nullifyChildrenName;
     private boolean printable;
-
+    private String fixed;
     public abstract String getNodeHelp();
-
+    protected String fixedValue;
     public XSDElement(WSDLManagerRetrieval manager, Node node, Class<?> type) {
         this.type = type;
         this.node = node;
@@ -56,11 +56,13 @@ public abstract class XSDElement<T> {
     protected abstract Boolean isESQLPrintable();
 
     public String getTargetTamespace() {
+        if (this.node == null) return null;
         String ns = (String) this.node.getUserData("tns");
         return ns;
     }
 
     public String getExplicitlySetTargetTamespace() {
+        if (this.node == null) return null;
         String ns = (String) this.node.getUserData("EX_tns");
         return ns;
     }
@@ -102,7 +104,6 @@ public abstract class XSDElement<T> {
             }
 
         }
-
         try {
             xsdElement = XSDElement.getInstanceForSimpleElement(manager, element, nodeName);
             xsdElement.setName(name);
@@ -230,8 +231,7 @@ public abstract class XSDElement<T> {
             return new XSDAll(manager, node);
         else if (nodeName.equals("annotation"))
             return new XSDAnnotation(manager, node);
-        else if (nodeName.equals("any"))
-            return new XSDAny(manager, node);
+
         else if (nodeName.equals("choice"))
             return new XSDChoice(manager, node);
         else if (nodeName.equals("complexContent"))
@@ -265,6 +265,8 @@ public abstract class XSDElement<T> {
             XSDSimpleElementType simpleType = XSDSimpleElementType.parse(type);
             if (simpleType.equals(XSDSimpleElementType.LIST))
                 element = new XSDList(manager, node);
+            else if (simpleType.equals(XSDSimpleElementType.ANY))
+                element = new XSDAny(manager, node);
             else
                 element = new XSDSimpleElement(manager, node, simpleType);
             return element;
@@ -301,8 +303,11 @@ public abstract class XSDElement<T> {
         this.setName(Utils.getAttrValueFromNode(this.node, "name"));
         this.setMaxOccurs(Utils.getAttrValueFromNode(this.node, "maxOccurs"));
         this.setMinOccurs(Utils.getAttrValueFromNode(this.node, "minOccurs"));
-        this.setDefaultValue((T) Utils.getAttrValueFromNode(this.node, "default"));
+        this.setDefaultValue(Utils.getAttrValueFromNode(this.node, "default"));
+        this.setFixedValue((T) Utils.getAttrValueFromNode(this.node, "fixed"));
     }
+
+    protected abstract void setFixedValue(T fixedValue);
 
     /**
      * return if the element is nillable..
@@ -360,7 +365,7 @@ public abstract class XSDElement<T> {
     /**
      * @param value the name to set
      */
-    public void setDefaultValue(T value) {
+    public void setDefaultValue(String value) {
         // this.defaultValue = value;
     }
 
@@ -422,7 +427,6 @@ public abstract class XSDElement<T> {
     }
 
     public void toESQL() {
-
         this.addHelpComment();
     }
 

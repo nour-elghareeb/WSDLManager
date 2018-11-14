@@ -2,43 +2,95 @@ package ne.wsdlparse.esql;
 
 import java.util.Locale;
 
-import ne.wsdlparse.esql.constant.ESQLSource;
+import ne.wsdlparse.Utils;
 import ne.wsdlparse.utility.ConsoleStyle;
 import ne.wsdlparse.xsd.constant.XSDSimpleElementType;
 
 public class ESQLSetterLine extends ESQLLine {
     private XSDSimpleElementType xsdType;
-    private ESQLSource source = ESQLSource.OUTPUT;
     private String xPath;
-    private boolean inputMode;
+    private String defaultValue;
 
-    public ESQLSetterLine(String xPath, XSDSimpleElementType xsdType) {
+    public ESQLSetterLine(String xPath, XSDSimpleElementType xsdType, String defaultValue) {
         super();
         this.xPath = xPath;
         this.xsdType = xsdType;
-    }
-
-    public void setSource(ESQLSource source) {
-        this.source = source;
-    }
-    public void setInputMode(boolean useReference){
-        this.inputMode = useReference;
+        if (defaultValue == null)
+            this.defaultValue = "''";
+        else
+            this.defaultValue = defaultValue;
     }
 
     @Override
-    String generate() {
-        return String.format(Locale.getDefault(), "SET %s.XMLNSC.%s = '' -- %s;", this.source.get(), this.xPath,
-                this.xsdType.getDesc());
+    String generate(boolean useColors) {
+        switch (this.source) {
+        case OUTPUT:
+            return this.generateOutputBlock(useColors);
+
+        case INPUT:
+            return this.generateInputSetters(useColors);
+        }
+        return null;
+    }
+
+    private String generateInputSetters(boolean useColors) {
+        String pathWithoutPrefix = Utils.replacePrefixesWithAsterisk(this.xPath);
+        String varname = Utils.splitPrefixes(this.xPath.substring(xPath.lastIndexOf(".") + 1))[1];
+        String placeholder = "DECLARE %s %s %s.XMLNSC.%s; %s";
+        if (useColors)
+            // TODO: add coloring
+            return String.format(Locale.getDefault(), placeholder,
+                    ConsoleStyle.addTextColor(varname, ConsoleStyle.Color.YELLOW),
+                    ConsoleStyle.addTextColor(this.useReference ? "REFERENCE TO"
+                            : (this.xsdType.equals(XSDSimpleElementType.UNION_CHILDREN) ? "REFERENCE TO"
+                                    : this.xsdType.name()),
+                            ConsoleStyle.Color.PURPLE),
+                    ConsoleStyle.addTextColor(this.source.get(), ConsoleStyle.Color.GREEN),
+                    ConsoleStyle.addTextColor(pathWithoutPrefix, ConsoleStyle.Color.BLUE),
+                    ConsoleStyle.addTextColor("-- " + this.xsdType.getDesc(), ConsoleStyle.Color.LIGHT_GRAY));
+        else
+            return String.format(Locale.getDefault(), placeholder, varname, this.xsdType.name(), this.source.get(),
+                    pathWithoutPrefix, "-- " + this.xsdType.getDesc());
+    }
+
+    // private String generateInputUsingRef(boolean useColors) {
+
+    // String pathWithoutPrefix = Utils.replacePrefixesWithAsterisk(this.xPath);
+    // String varname =
+    // Utils.splitPrefixes(this.xPath.substring(xPath.lastIndexOf(".") + 1))[1];
+    // String placeholder = "SET %s %s %s.XMLNSC.%s; %s";
+    // if (useColors)
+    // // TODO: add coloring
+    // return String.format(Locale.getDefault(), placeholder,
+    // ConsoleStyle.addTextColor(varname, ConsoleStyle.Color.YELLOW),
+    // ConsoleStyle.addTextColor("REFERENCE TO", ConsoleStyle.Color.PURPLE),
+    // ConsoleStyle.addTextColor(this.source.get(), ConsoleStyle.Color.GREEN),
+    // ConsoleStyle.addTextColor(pathWithoutPrefix, ConsoleStyle.Color.BLUE),
+    // ConsoleStyle.addTextColor("-- " + this.xsdType.getDesc(),
+    // ConsoleStyle.Color.LIGHT_GRAY));
+    // else
+    // return String.format(Locale.getDefault(), placeholder, varname, "REFERENCE
+    // TO", this.source.get(),
+    // pathWithoutPrefix, "-- " + this.xsdType.getDesc());
+    // }
+
+    private String generateOutputBlock(boolean useColors) {
+        String placeholder = "SET %s.XMLNSC.%s = %s %s;";
+        if (useColors) {
+            // TODO: add color
+            return String.format(Locale.getDefault(), placeholder,
+                    ConsoleStyle.addTextColor(this.source.get(), ConsoleStyle.Color.GREEN),
+                    ConsoleStyle.addTextColor(this.xPath, ConsoleStyle.Color.BLUE),
+                    ConsoleStyle.addTextColor(this.defaultValue, ConsoleStyle.Color.YELLOW),
+                    ConsoleStyle.addTextColor("-- " + this.xsdType.getDesc(), ConsoleStyle.Color.LIGHT_GRAY));
+        } else
+            return String.format(Locale.getDefault(), placeholder, this.source.get(), this.xPath,
+                    " -- " + this.xsdType.getDesc());
     }
 
     @Override
     public void print() {
-        String placeholder = "SET %s.XMLNSC.%s = '' %s;%s";
-        System.out.printf(Locale.getDefault(), placeholder,
-                ConsoleStyle.addTextColor(this.source.get(), ConsoleStyle.Color.GREEN),
-                ConsoleStyle.addTextColor(this.xPath, ConsoleStyle.Color.BLUE),
-                ConsoleStyle.addTextColor("-- " + this.xsdType.getDesc(), ConsoleStyle.Color.LIGHT_GRAY),
-                System.getProperty("line.separator"));
+        System.out.println(this.generate(true));
     };
 
 }

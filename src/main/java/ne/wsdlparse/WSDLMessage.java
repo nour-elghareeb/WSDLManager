@@ -110,8 +110,12 @@ public class WSDLMessage {
 
     }
 
-    private void loadRPCParams() {
-
+    private void loadRPCParams()
+            throws XPathExpressionException, SAXException, IOException, ParserConfigurationException, WSDLException {
+                NodeList parts = (NodeList) this.manager.getXPath().compile("part").evaluate(this.node, XPathConstants.NODESET);
+                for (int i = 0; i < parts.getLength(); i++){
+                    loadElement(parts.item(i));
+                }
     }
 
     public void loadParams()
@@ -124,6 +128,7 @@ public class WSDLMessage {
             break;
         case RPC:
             this.loadRPCParams();
+            break;
         default:
             throw new WSDLException(WSDLExceptionCode.INVALID_OPERATION_STYLE);
         }
@@ -155,128 +160,8 @@ public class WSDLMessage {
     private void loadElement(Node element)
             throws XPathExpressionException, SAXException, IOException, ParserConfigurationException, WSDLException {
         this.parts.add(XSDElement.getInstance(this.manager, element));
-        // // Split element name from prfix
-        // String[] elementName =
-        // Utils.splitPrefixes(Utils.getAttrValueFromNode(element, "element"));
-        // // fetch element from inline schema
-        // String xpath = String.format(Locale.getDefault(),
-        // "/definitions/types/schema[@targetNamespace='%s']",
-        // this.manager.getTargetNameSpace());
-        // Node schema = (Node)
-        // this.manager.getXPath().compile(xpath).evaluate(this.manager.getWSDLFile(),
-        // XPathConstants.NODE);
-        // // No schema found, wsdl has errors?!!
-        // if (schema == null) {
-        // return;
-        // }
-
-        // // TODO: uncomment this block
-        // // xpath = String.format(Locale.getDefault(), "element[@name='%s']",
-        // // elementName[1]);
-        // // // check for inline schema
-        // Node element = (Node) this.manager.getXPath().compile(xpath).evaluate(schema,
-        // XPathConstants.NODE);
-        // if (element != null) {
-        // check if element refer to another type
-        // String type = Utils.getAttrValueFromNode(element, "type");
-        // // type not found, check children..
-        // if (type == null) {
-        // element = Utils.getFirstXMLChild(element);
-        // } else {
-        // element = (Node) this.manager.getXSDManager().find(
-        // String.format(Locale.getDefault(), "/schema/*[@name='%s']",
-        // Utils.splitPrefixes(type)[1]),
-        // XPathConstants.NODE);
-        // }
-        // XSDElement part = XSDElement.getInstance(this.manager, element);
-        // if (part != null) {
-        // // part.setName(Utils.getAttrValueFromNode(element, "element"));
-
-        // }
-
-        // check for include....
-        // String xpath = String.format(Locale.getDefault(),
-        // "/definitions/types/schema[@targetNamespace='%s']/element[@name='%s']",
-        // this.manager.getTargetNameSpace(), elementName[1]);
-        // Node elementNode = (Node)
-        // this.manager.getXPath().compile(xpath).evaluate(this.manager.getWSDLFile(),
-        // XPathConstants.NODE);
-        // // Not found in the inline schema.. let's check if is there include (external
-        // // xsd)
-        // String az =
-        String xx = this.manager.getXPath().getNamespaceContext().getNamespaceURI("s");
-        // String ts = this.manager.getTargetNameSpace();
-    }
-
-    /**
-     * *
-     *
-     * @param node Part xml node in message
-     * @throws XPathExpressionException
-     * @throws WSDLException
-     * @throws ParserConfigurationException
-     * @throws IOException
-     * @throws SAXException
-     */
-    private void loadPartWithType(Node node)
-            throws XPathExpressionException, SAXException, IOException, ParserConfigurationException, WSDLException {
-        // XSDElement element;
-        // String type = Utils.getAttrValueFromNode(node, "type");
-        // // String name = ;
-        // // String defaultValue = Utils.getAttrValueFromNode(node, "defaultValue");
-        // type = type.replace("xsd:", "");
-        // if (type.equals("string"))
-        // element = new XSDString();
-        // else if (type.equals("integer"))
-        // element = new XSDInteger();
-        // else if (type.equals("boolean"))
-        // element = new XSDBoolean();
-        // else if (type.equals("choice"))
-        // element = new XSDChoice();
-        // else
-        // return;
-        // element.setName(Utils.getAttrValueFromNode(node, "name"));
-        // element.setMaxOccurs(Utils.getAttrValueFromNode(node, "maxOccurs"));
-        // element.setMinOccurs(Utils.getAttrValueFromNode(node, "minOccurs"));
-        // element.setNillable(Utils.getAttrValueFromNode(node, "nillable"));
-        // element.setDefaultValue(Utils.getAttrValueFromNode(node, "default"));
-        this.parts.add(XSDElement.getInstance(this.manager, node));
-        // final NodeList partNodes = (NodeList) this.manager.getXPath()
-        // .compile(String.format(Locale.getDefault(), "part[@name='%s']", partName))
-        // .evaluate(this.node, XPathConstants.NODESET);
-
-        // this.elements = new ArrayList<XSDElement>() {
-        // {
-        // for (int i = 0; i < partNodes.getLength(); i++) {
-        // XSDElement element;
-        // Node node = partNodes.item(i);
-        // String type = Utils.getAttrValueFromNode(node, "type");
-        // // String name = ;
-        // // String defaultValue = Utils.getAttrValueFromNode(node, "defaultValue");
-        // type = type.replace("xsd:", "");
-        // if (type.equals("string"))
-        // element = new XSDString();
-        // else if (type.equals("integer"))
-        // element = new XSDInteger();
-        // else if (type.equals("boolean"))
-        // element = new XSDBoolean();
-        // else if (type.equals("choice"))
-        // element = new XSDChoice();
-        // else
-        // break;
-        // element.setName(Utils.getAttrValueFromNode(node, "name"));
-        // element.setMaxOccurs(Utils.getAttrValueFromNode(node, "maxOccurs"));
-        // element.setMinOccurs(Utils.getAttrValueFromNode(node, "minOccurs"));
-        // element.setNillable(Utils.getAttrValueFromNode(node, "nillable"));
-        // element.setDefaultValue(Utils.getAttrValueFromNode(node, "default"));
-        // add(element);
-        // String xx = "aa";
-        // }
-        // }
-        // };
 
     }
-
     public void setIsExternal(boolean isExternal) {
         this.isExternal = isExternal;
     }

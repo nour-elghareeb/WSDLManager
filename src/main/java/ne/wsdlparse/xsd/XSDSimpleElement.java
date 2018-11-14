@@ -10,19 +10,27 @@ import org.w3c.dom.NodeList;
 import ne.wsdlparse.Utils;
 import ne.wsdlparse.WSDLManagerRetrieval;
 import ne.wsdlparse.esql.ESQLLine;
+import ne.wsdlparse.esql.constant.ESQLDataType;
 import ne.wsdlparse.xsd.constant.XSDSimpleElementType;
 
 public class XSDSimpleElement<T> extends XSDElement<T> {
     private XSDSimpleElementType simpleType;
 
     public XSDSimpleElement(WSDLManagerRetrieval manager, Node node, XSDSimpleElementType type) {
-        super(manager, node, type.getClassType());
+        super(manager, node, String.class);
         this.simpleType = type;
+        this.setDefaultValue(Utils.getAttrValueFromNode(this.node, "default"));
+        this.setFixedValue((T) Utils.getAttrValueFromNode(this.node, "fixed"));
     }
 
     @Override
     public String getNodeHelp() {
         return help;
+    }
+
+    @Override
+    public void setDefaultValue(String value) {
+        this.defaultValue = this.prepareElementValue(value);
     }
 
     @Override
@@ -38,7 +46,10 @@ public class XSDSimpleElement<T> extends XSDElement<T> {
                 prefix = this.manager.getPrefix(ns);
             }
         }
-        this.manager.getESQLManager().addParam(prefix, this.name, this.simpleType);
+        if (this.maxOccurs != 0) {
+            String val = this.fixedValue == null ? this.defaultValue : this.fixedValue;
+            this.manager.getESQLManager().addParam(prefix, this.name, this.simpleType, val);
+        }
     }
 
     @Override
@@ -53,5 +64,43 @@ public class XSDSimpleElement<T> extends XSDElement<T> {
     @Override
     protected boolean hasPrintable() {
         return true;
+    }
+
+    @Override
+    protected void setFixedValue(T fixedValue) {
+        if (fixedValue != null)
+            this.fixedValue = this.prepareElementValue(String.valueOf(fixedValue));
+    }
+
+    public String prepareElementValue(String value) {
+        if (this.simpleType == null || value == null) return null;
+        ESQLDataType type = this.simpleType.getESQLDataType();
+        if (type == null) return null;
+        switch (type) {
+        case BOOLEAN:
+            return value.toUpperCase();
+        case CHARACTER:
+            return String.format("'%s'", value);
+        case BIT:
+            return String.format("B'%s'", value);
+        case BLOB:
+            return String.format("X'%s'", value);
+        case DATE:
+        case TIME:
+        case GMTTIME:
+        case TIMESTAMP:
+        case GMTTIMESTAMP:
+            return String.format("%s '%s'", this.simpleType.getESQLDataType().getValue(), value);
+        case INTERVAL:
+            return String.format("%s '%s'", this.simpleType.getESQLDataType().getValue(), value);
+        case DECIMAL:
+        case FLOAT:
+        case INTEGER:
+            return value;
+        case NULL:
+            return "NULL";
+        default:
+            return null;
+        }
     }
 }

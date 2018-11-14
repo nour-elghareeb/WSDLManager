@@ -22,9 +22,9 @@ public class FaultMessage extends WSDLMessage {
     public void generateESQL() {
         this.manager.getESQLManager().clearTree();
         this.manager.getESQLManager().levelUp("soapenv", "Fault", true);
-        this.manager.getESQLManager().addParam(null, "faultcode", XSDSimpleElementType.STRING);
-        this.manager.getESQLManager().addParam(null, "faultstring   ", XSDSimpleElementType.STRING);
-        this.manager.getESQLManager().addParam(null, "faultactor   ", XSDSimpleElementType.STRING);
+        this.manager.getESQLManager().addParam(null, "faultcode", XSDSimpleElementType.STRING, null);
+        this.manager.getESQLManager().addParam(null, "faultstring   ", XSDSimpleElementType.STRING, null);
+        this.manager.getESQLManager().addParam(null, "faultactor   ", XSDSimpleElementType.STRING, null);
         this.manager.getESQLManager().levelUp(null, "detail", this.parts.size() != 0);
         this.manager.getESQLManager().levelUp(this.prefix, this.name, this.parts.size() != 0);
         for (XSDElement element : this.parts) {

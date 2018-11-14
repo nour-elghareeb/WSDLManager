@@ -1,8 +1,7 @@
 package ne.wsdlparse;
 
+import java.net.URL;
 import java.util.List;
-
-import javax.xml.XMLConstants;
 
 import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
@@ -17,11 +16,29 @@ import org.w3c.dom.Node;
 public class Utils {
     private static final String XMLNAMESPACE = "xmlns";
 
+    public static String replacePrefixesWithAsterisk(String value) {
+        int startPoint = 0;
+
+        while (startPoint != -1) {
+
+            int end = value.indexOf(":", startPoint);
+            if (end == -1)
+                return value;
+            int start = value.lastIndexOf(".", end);
+            String sub = value.substring(start + 1, end);
+            if (!sub.equals("*"))
+                value = value.replace(sub, "*");
+            startPoint = end + 1;
+
+        }
+        return value;
+    }
+
     public static Node getFirstXMLChild(Node node) {
         if (node == null)
             return null;
         node = node.getFirstChild();
-        while (node != null && node.getNodeName().equals("#text")) {
+        while (node != null && (node.getNodeName().equals("#text") || node.getNodeName().equals("#comment") ) ) {
             node = node.getNextSibling();
         }
         return node;
@@ -29,10 +46,19 @@ public class Utils {
 
     public static Node getNextXMLSibling(Node node) {
         node = node.getNextSibling();
-        while (node != null && node.getNodeName().equals("#text")) {
+        while (node != null && (node.getNodeName().equals("#text") || node.getNodeName().equals("#comment") )) {
             node = node.getNextSibling();
         }
         return node;
+    }
+    public static boolean validateURI(String uri) {
+        final URL url;
+        try {
+            url = new URL(uri);
+        } catch (Exception e1) {
+            return false;
+        }
+        return "http".equals(url.getProtocol()) || "https".equals(url.getProtocol());
     }
 
     /**

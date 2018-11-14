@@ -56,7 +56,7 @@ public abstract class XSDComplexElement<T> extends XSDElement<T> {
             child.setUserData("tns", this.node.getUserData("tns"), null);
             XSDElement element = XSDElement.getInstance(this.manager, child);
 
-            if (element != null && this.validateChild(child, element))
+            if (element != null && this.validateChild(child, element) && element.getMaxOccurs() != 0)
                 this.children.add(element);
             child = Utils.getNextXMLSibling(child);
         }
@@ -75,12 +75,14 @@ public abstract class XSDComplexElement<T> extends XSDElement<T> {
                 prefix = this.manager.getPrefix(ns);
             }
         }
-        super.toESQL();
 
-        this.manager.getESQLManager().levelUp(prefix, this.name, this.hasPrintable());
+        if (this.maxOccurs != 0) {
+            super.toESQL();
+            this.manager.getESQLManager().levelUp(prefix, this.name, this.hasPrintable());
 
-        for (XSDElement element : this.children) {
-            element.toESQL();
+            for (XSDElement element : this.children) {
+                element.toESQL();
+            }
         }
         // this.manager.getESQLManager().addEmptyLine(false);
         this.manager.getESQLManager().levelDown(this.name, prefix, this.hasPrintable());
@@ -101,8 +103,6 @@ public abstract class XSDComplexElement<T> extends XSDElement<T> {
         return help;
     }
 
-
-
     @Override
     public void nullifyChildrenName() {
         super.nullifyChildrenName();
@@ -112,11 +112,17 @@ public abstract class XSDComplexElement<T> extends XSDElement<T> {
             element.nullifyChildrenName();
         }
     }
+
     @Override
     protected boolean hasPrintable() {
-        for (XSDElement element : this.children){
-            if (element.hasPrintable()) return true;
+        for (XSDElement element : this.children) {
+            if (element.hasPrintable())
+                return true;
         }
         return false;
+    }
+    @Override
+    protected void setFixedValue(T fixedValue) {
+
     }
 }

@@ -21,7 +21,7 @@ public class ESQLCommentLine extends ESQLLine {
         this.verbosityType = type;
     }
 
-    String generate() {
+    String generate(boolean useColors) {
         if (this.value == null)
             return "";
         return "-- ".concat(this.value).concat(";");

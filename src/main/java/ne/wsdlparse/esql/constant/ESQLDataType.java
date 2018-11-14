@@ -15,7 +15,7 @@ public enum ESQLDataType {
     // Strings
     BIT("BIT"), BLOB("BLOB"), CHARACTER("CHARACTER"),
     // Namespace
-    NAMESPACE("NAMESPACE");
+    NAMESPACE("NAMESPACE"), ESQLComment("-- "), NULL("NULL");
     private String value;
 
     ESQLDataType(String value) {

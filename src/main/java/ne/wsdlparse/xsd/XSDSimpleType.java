@@ -76,8 +76,10 @@ public class XSDSimpleType extends XSDComplexElement<XSDElement<?>> {
         this.handleList();
         super.toESQL();
         // this.addHelpComment();
-        this.manager.getESQLManager().addParam(this.prefix, this.name, this.simpleType);
+        String val = this.fixedValue == null ? this.defaultValue : this.fixedValue;
+        this.manager.getESQLManager().addParam(this.prefix, this.name, this.simpleType, val);
     }
+
     @Override
     protected boolean hasPrintable() {
         return false;
