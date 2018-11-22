@@ -1,7 +1,7 @@
-package ne.wsdlparse.xsd.constant;
+package ne.wsdlparser.lib.xsd.constant;
 
-import ne.wsdlparse.exception.WSDLException;
-import ne.wsdlparse.exception.WSDLExceptionCode;
+import ne.wsdlparser.lib.exception.WSDLException;
+import ne.wsdlparser.lib.exception.WSDLExceptionCode;
 
 public enum XSDRestrictionParamType {
     ENUM("enumeration"), FRACTION_DIGITS("fractionDigits"), LENGTH("length"), MAX_EXCLUSIVE("maxExclusive"),

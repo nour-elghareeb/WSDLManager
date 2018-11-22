@@ -1,4 +1,4 @@
-package ne.wsdlparse.xsd;
+package ne.wsdlparser.lib.xsd;
 
 import java.io.IOException;
 
@@ -8,12 +8,11 @@ import javax.xml.xpath.XPathExpressionException;
 import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
 
-import ne.wsdlparse.WSDLManagerRetrieval;
-import ne.wsdlparse.exception.WSDLException;
-import ne.wsdlparse.xsd.constant.XSDSimpleElementType;
+import ne.wsdlparser.lib.WSDLManagerRetrieval;
+import ne.wsdlparser.lib.exception.WSDLException;
+import ne.wsdlparser.lib.xsd.constant.XSDSimpleElementType;
 
-public class XSDAny extends XSDSimpleElement<Void> {
-    protected boolean isSkippable = true;
+public class XSDAny extends XSDSimpleElement {
 
     public XSDAny(WSDLManagerRetrieval manager, Node node){
 
@@ -22,7 +21,7 @@ public class XSDAny extends XSDSimpleElement<Void> {
 
     @Override
     public String getNodeHelp() {
-        return "You can add any custom element here";
+        return "You can add any custom element at this level";
     }
 
     @Override
@@ -30,8 +29,8 @@ public class XSDAny extends XSDSimpleElement<Void> {
         return false;
     }
     @Override
-    public void toESQL() {
-        // super.toESQL();
+    public void toESQL() throws WSDLException {
+        addHelpComments();
         this.manager.getESQLManager().addParam(this.prefix, "", XSDSimpleElementType.ANY, null);
     }
 }

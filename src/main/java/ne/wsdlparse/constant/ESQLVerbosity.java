@@ -1,5 +1,5 @@
-package ne.wsdlparse.constant;
+package ne.wsdlparser.lib.constant;
 
 public enum ESQLVerbosity {
-    STRUCTURE, VALUE_HELP, DOCUMENTATION, EMPTY, MULTIPLICITY;
+    STRUCTURE, NODE_HELP, VALUE_HELP, DOCUMENTATION, EMPTY_LINES, MULTIPLICITY;
 }

@@ -1,4 +1,4 @@
-package ne.wsdlparse.utility;
+package ne.wsdlparser.lib.utility;
 
 import java.util.Locale;
 

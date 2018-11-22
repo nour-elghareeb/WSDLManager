@@ -1,4 +1,4 @@
-package ne.wsdlparse.xsd;
+package ne.wsdlparser.lib.xsd;
 
 import java.io.IOException;
 
@@ -8,20 +8,20 @@ import javax.xml.xpath.XPathExpressionException;
 import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
 
-import ne.wsdlparse.WSDLManagerRetrieval;
-import ne.wsdlparse.exception.WSDLException;
-import ne.wsdlparse.xsd.constant.XSDSimpleElementType;
+import ne.wsdlparser.lib.WSDLManagerRetrieval;
+import ne.wsdlparser.lib.exception.WSDLException;
+import ne.wsdlparser.lib.xsd.constant.XSDSimpleElementType;
 
 public class XSDAnnotation extends XSDComplexElement {
 
     public XSDAnnotation(WSDLManagerRetrieval manager, Node node)
             throws XPathExpressionException, SAXException, IOException, ParserConfigurationException, WSDLException {
-        super(manager, node, XSDAnnotation.class);
+        super(manager, node);
     }
 
     @Override
     public String getNodeHelp() {
-        return this.help;
+        return this.nodeHelp;
     }
 
     @Override
@@ -32,7 +32,7 @@ public class XSDAnnotation extends XSDComplexElement {
         XSDSimpleElementType elementType = simpleElement.getSimpleType();
         switch (elementType) {
         case DOCUMENTATION:
-            this.help = child.getTextContent();
+            this.nodeHelp = child.getTextContent();
             return true;
         }
         return false;

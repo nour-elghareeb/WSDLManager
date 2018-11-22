@@ -1,4 +1,4 @@
-package ne.wsdlparse.exception;
+package ne.wsdlparser.lib.exception;
 
 public class WSDLException extends Exception {
     private static final long serialVersionUID = 1L;

@@ -1,6 +1,6 @@
-package ne.wsdlparse.xsd.restriction;
+package ne.wsdlparser.lib.xsd.restriction;
 
-import ne.wsdlparse.xsd.constant.XSDRestrictionParamType;
+import ne.wsdlparser.lib.xsd.constant.XSDRestrictionParamType;
 
 public abstract class XSDRestrictionParam {
 

@@ -1,7 +1,10 @@
-package ne.wsdlparse.esql;
+package ne.wsdlparser.lib.esql;
 
-import ne.wsdlparse.esql.constant.ESQLSource;
-
+import ne.wsdlparser.lib.esql.constant.ESQLSource;
+/**
+ * An abstract ESQL line implementation for generic purposes.
+ * @author nour
+ */
 public abstract class ESQLLine {
 
     protected ESQLSource source;

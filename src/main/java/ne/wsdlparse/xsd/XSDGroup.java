@@ -1,4 +1,4 @@
-package ne.wsdlparse.xsd;
+package ne.wsdlparser.lib.xsd;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -11,16 +11,16 @@ import javax.xml.xpath.XPathExpressionException;
 import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
 
-import ne.wsdlparse.Utils;
-import ne.wsdlparse.WSDLManagerRetrieval;
-import ne.wsdlparse.exception.WSDLException;
+import ne.wsdlparser.lib.utility.Utils;
+import ne.wsdlparser.lib.WSDLManagerRetrieval;
+import ne.wsdlparser.lib.exception.WSDLException;
 
-public class XSDGroup extends XSDComplexElement<XSDElement> {
+public class XSDGroup extends XSDComplexElement {
     private String reference;
 
     public XSDGroup(WSDLManagerRetrieval manager, Node node)
             throws XPathExpressionException, SAXException, IOException, ParserConfigurationException, WSDLException {
-        super(manager, node, XSDExtention.class);
+        super(manager, node);
     }
 
     @Override
@@ -38,7 +38,7 @@ public class XSDGroup extends XSDComplexElement<XSDElement> {
         Node refElementNode = (Node) this.manager.getXSDManager()
                 .find(String.format(Locale.getDefault(), "/schema/*[@name='%s']", this.reference), XPathConstants.NODE);
         XSDElement xsdRefElement = XSDElement.getInstance(this.manager, refElementNode);
-        this.children = new ArrayList<XSDElement<XSDElement>>();
+        this.children = new ArrayList();
         this.children.add(xsdRefElement);
     }
 

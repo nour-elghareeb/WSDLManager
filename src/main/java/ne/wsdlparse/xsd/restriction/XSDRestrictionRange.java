@@ -1,4 +1,4 @@
-package ne.wsdlparse.xsd.restriction;
+package ne.wsdlparser.lib.xsd.restriction;
 
 import java.util.Locale;
 

@@ -1,4 +1,4 @@
-package ne.wsdlparse.xsd.restriction;
+package ne.wsdlparser.lib.xsd.restriction;
 
 public class XSDRestrictionFractionDigits extends XSDRestrictionParam {
     private String value;

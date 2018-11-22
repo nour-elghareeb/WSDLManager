@@ -1,8 +1,10 @@
-package ne.wsdlparse.xsd;
+package ne.wsdlparser.lib.xsd;
 
+import com.sun.istack.internal.logging.Logger;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Locale;
+import java.util.logging.Level;
 
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.xpath.XPathConstants;
@@ -11,38 +13,40 @@ import javax.xml.xpath.XPathExpressionException;
 import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
 
-import ne.wsdlparse.Utils;
-import ne.wsdlparse.WSDLManagerRetrieval;
-import ne.wsdlparse.constant.ESQLVerbosity;
-import ne.wsdlparse.exception.WSDLException;
-import ne.wsdlparse.utility.ConsoleStyle;
-import ne.wsdlparse.xsd.constant.XSDRestrictionParamType;
-import ne.wsdlparse.xsd.constant.XSDSimpleElementType;
-import ne.wsdlparse.xsd.restriction.XSDRestrictionEnum;
-import ne.wsdlparse.xsd.restriction.XSDRestrictionFractionDigits;
-import ne.wsdlparse.xsd.restriction.XSDRestrictionLength;
-import ne.wsdlparse.xsd.restriction.XSDRestrictionMaxLength;
-import ne.wsdlparse.xsd.restriction.XSDRestrictionMinLength;
-import ne.wsdlparse.xsd.restriction.XSDRestrictionParam;
-import ne.wsdlparse.xsd.restriction.XSDRestrictionPattern;
-import ne.wsdlparse.xsd.restriction.XSDRestrictionRange;
-
-public class XSDRestriction extends XSDComplexElement<XSDElement> {
-    private boolean isSimpleElement = true;
+import ne.wsdlparser.lib.utility.Utils;
+import ne.wsdlparser.lib.WSDLManagerRetrieval;
+import ne.wsdlparser.lib.constant.ESQLVerbosity;
+import ne.wsdlparser.lib.exception.WSDLException;
+import ne.wsdlparser.lib.exception.WSDLExceptionCode;
+import ne.wsdlparser.lib.xsd.constant.XSDRestrictionParamType;
+import ne.wsdlparser.lib.xsd.constant.XSDSimpleElementType;
+import ne.wsdlparser.lib.xsd.restriction.XSDRestrictionEnum;
+import ne.wsdlparser.lib.xsd.restriction.XSDRestrictionFractionDigits;
+import ne.wsdlparser.lib.xsd.restriction.XSDRestrictionLength;
+import ne.wsdlparser.lib.xsd.restriction.XSDRestrictionMaxLength;
+import ne.wsdlparser.lib.xsd.restriction.XSDRestrictionMinLength;
+import ne.wsdlparser.lib.xsd.restriction.XSDRestrictionParam;
+import ne.wsdlparser.lib.xsd.restriction.XSDRestrictionPattern;
+import ne.wsdlparser.lib.xsd.restriction.XSDRestrictionRange;
+/**
+ * XSD Restriction node implementation
+ * @author nour
+ */
+public class XSDRestriction extends XSDComplexElement {
     private ArrayList<XSDRestrictionParam> params;
     private String base;
 
     public XSDRestriction(WSDLManagerRetrieval manager, Node node)
             throws XPathExpressionException, SAXException, IOException, ParserConfigurationException, WSDLException {
-        super(manager, node, XSDExtention.class);
+        super(manager, node);
     }
 
     @Override
     public String getNodeHelp() {
-        return null;
+        return "The next field has restriction.";
     }
 
-    // TODO: fetch base and load children...
+    
     @Override
     protected void loadChildren()
             throws XPathExpressionException, SAXException, IOException, ParserConfigurationException, WSDLException {
@@ -50,30 +54,34 @@ public class XSDRestriction extends XSDComplexElement<XSDElement> {
         try {
             // check if simple content
             this.simpletype = XSDSimpleElementType.parse(this.base);
-            this.isSimpleElement = true;
             Node child = Utils.getFirstXMLChild(this.node);
-            this.params = new ArrayList<XSDRestrictionParam>();
+            this.params = new ArrayList<>();
             while (child != null) {
                 this.addRestrictionParam(child);
                 child = Utils.getNextXMLSibling(child);
             }
 
         } catch (WSDLException e) {
-            Node base = (Node) this.manager.getXSDManager()
+            Node baseNode = (Node) this.manager.getXSDManager()
                     .find(String.format(Locale.getDefault(), "/schema/*[@name='%s']", this.base), XPathConstants.NODE);
-            if (base == null) {
+            if (baseNode == null) {
                 if (this.base.toLowerCase().equals("array")) {
                     XSDElement any = new XSDAny(this.manager, null);
+                    any.setQualified(isQualified());
+                    any.setExplicitTNS(getTargetTamespace());
                     this.children.add(any);
                 }
             }else{
                 super.loadChildren();
             }
-            ;
+            
         }
 
     }
-
+    /**
+     * Add simple restriction Param based on its type.
+     * @param paramNode 
+     */
     private void addRestrictionParam(Node paramNode) {
         try {
             XSDRestrictionParamType type = XSDRestrictionParamType
@@ -128,12 +136,12 @@ public class XSDRestriction extends XSDComplexElement<XSDElement> {
                 break;
             }
         } catch (WSDLException e) {
-            e.printStackTrace();
+            Logger.getLogger(XSDRestriction.class).log(Level.SEVERE, null, e);
         }
 
     }
 
-    private XSDRestrictionParam getParam(Class<?> cls) {
+    private XSDRestrictionParam getParam(Class<?> cls) throws WSDLException {
 
         for (XSDRestrictionParam param : this.params) {
             if (param.getClass() == cls) {
@@ -146,14 +154,12 @@ public class XSDRestriction extends XSDComplexElement<XSDElement> {
             XSDRestrictionParam param = (XSDRestrictionParam) cls.newInstance();
             this.params.add(param);
             return param;
-        } catch (InstantiationException e) {
+        } catch (InstantiationException | IllegalAccessException e) {
             // TODO Auto-generated catch block
-            e.printStackTrace();
-        } catch (IllegalAccessException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+            Logger.getLogger(XSDRestriction.class).log(Level.SEVERE, null, e);
         }
-        return null;
+        // TODO Auto-generated catch block
+        throw new WSDLException(WSDLExceptionCode.WSDL_PARSING_EXCEPTION);
     }
 
     private void setBase(String base) {
@@ -176,7 +182,7 @@ public class XSDRestriction extends XSDComplexElement<XSDElement> {
     }
 
     @Override
-    public void toESQL() {
+    public void toESQL() throws WSDLException{
         if (getRestrictionParams() == null) {
             if (children == null)
                 return;
@@ -185,8 +191,7 @@ public class XSDRestriction extends XSDComplexElement<XSDElement> {
         };
         for (XSDRestrictionParam param : getRestrictionParams()) {
             this.manager.getESQLManager().addComment(ESQLVerbosity.VALUE_HELP,
-                    ConsoleStyle.addTextColor("Restriction: ", ConsoleStyle.Color.RED),
-                    this.simpletype + " -> " + param.getHelp());
+                    "Restriction: " + this.simpletype + " -> " + param.getHelp());
         }
         return;
     }

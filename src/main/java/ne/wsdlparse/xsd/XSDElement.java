@@ -1,5 +1,6 @@
-package ne.wsdlparse.xsd;
+package ne.wsdlparser.lib.xsd;
 
+import com.sun.istack.Nullable;
 import java.io.IOException;
 import java.util.Locale;
 
@@ -10,93 +11,204 @@ import javax.xml.xpath.XPathExpressionException;
 import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
 
-import ne.wsdlparse.Utils;
-import ne.wsdlparse.WSDLManagerRetrieval;
-import ne.wsdlparse.constant.ESQLVerbosity;
-import ne.wsdlparse.exception.WSDLException;
-import ne.wsdlparse.exception.WSDLExceptionCode;
-import ne.wsdlparse.xsd.constant.XSDSimpleElementType;
+import ne.wsdlparser.lib.utility.Utils;
+import ne.wsdlparser.lib.WSDLManagerRetrieval;
+import ne.wsdlparser.lib.constant.ESQLVerbosity;
+import ne.wsdlparser.lib.exception.WSDLException;
+import ne.wsdlparser.lib.exception.WSDLExceptionCode;
+import ne.wsdlparser.lib.xsd.constant.XSDSimpleElementType;
 
-public abstract class XSDElement<T> {
-    protected String help;
+/**
+ * Abstract base class for any XSD element/type
+ *
+ * @author nour
+ */
+public abstract class XSDElement {
+
+    protected String nodeHelp;
+    protected String valueHelp;
+    protected String value;
+    protected String prefix;
     protected String name;
-    protected T value;
+    protected String fixedValue;
     protected int maxOccurs = -1;
     protected int minOccurs = -1;
     protected String defaultValue;
     protected boolean nillable;
-    protected Class<?> type;
-    protected String prefix = "";
+    protected boolean qualified;
+    private String explicitTNS;
+
+    public void setExplicitTNS(String explicitTNS) {
+        this.explicitTNS = explicitTNS;
+    }
+
+    public boolean isQualified() {
+        try {
+            this.qualified = (boolean) node.getUserData("qualified");
+        } catch (Exception ex) {
+            this.qualified = false;
+        }
+        return this.qualified;
+    }
+
+    public void setQualified(boolean qualified) {
+        if (this.node != null) {
+            this.node.setUserData("qualified", qualified, null);
+        }
+        this.qualified = qualified;
+    }
     protected Node node;
     protected WSDLManagerRetrieval manager;
-    protected String xPath = "";
-    protected boolean isSkippable = false;
-    private String targetNamespace;
-    protected boolean nullifyChildrenName;
-    private boolean printable;
-    private String fixed;
-    public abstract String getNodeHelp();
-    protected String fixedValue;
-    public XSDElement(WSDLManagerRetrieval manager, Node node, Class<?> type) {
-        this.type = type;
+
+    @Nullable
+    public String getValueHelp() {
+        return valueHelp;
+    }
+
+    /**
+     *
+     * @param manager WSDLManager instance injection
+     * @param node XML node associated with this element
+     */
+    public XSDElement(WSDLManagerRetrieval manager, Node node) {
+        this.prefix = "";
         this.node = node;
         this.manager = manager;
         loadAttributes();
     }
 
+    /**
+     * XSD node help.. To be overridden if subclasses have use for it.
+     *
+     * @return
+     */
+    @Nullable
+    public String getNodeHelp() {
+        return null;
+    }
+
+    /**
+     * Check if this element is an instance of XSDComplex element
+     *
+     * @param element element to check
+     * @return true if complex.
+     */
     public static boolean isComplex(XSDElement element) {
         Boolean val = element instanceof XSDComplexElement;
         return val;
     }
 
-    public void setHelp(String help) {
-        this.help = help;
+    /**
+     * Set XSD node help
+     *
+     * @param nodeHelp
+     */
+    public void setNodeHelp(String nodeHelp) {
+        this.nodeHelp = nodeHelp;
     }
 
+    /**
+     * Check if this node has parameters to print.
+     *
+     * @return
+     */
     protected abstract Boolean isESQLPrintable();
 
+    /**
+     * @return this node namespace embedded inside UserData during element
+     * parsing.
+     */
     public String getTargetTamespace() {
-        if (this.node == null) return null;
+        if (this.node == null) {
+            if (isQualified()) {
+                return this.explicitTNS == null ? this.manager.getTargetNameSpace() : null;
+            }
+            return null;
+        }
         String ns = (String) this.node.getUserData("tns");
+        if (ns == null) {
+            if (isQualified()) {
+                return this.manager.getTargetNameSpace();
+            }
+        }
         return ns;
     }
 
+    /**
+     *
+     * @return this node namespace explicitly set to override normal namespace
+     * (if the element is imported from another XSD with a different NS.
+     */
     public String getExplicitlySetTargetTamespace() {
-        if (this.node == null) return null;
+        if (this.node == null) {
+            return null;
+        }
         String ns = (String) this.node.getUserData("EX_tns");
         return ns;
     }
 
-    public static XSDElement<?> getInstance(WSDLManagerRetrieval manager, Node node)
+    /**
+     * Parse node to get the appropriate XSD element implementation.
+     *
+     * @param manager WSDLManager instance injection
+     * @param element XML node associated with this element
+     * @return XSDElement subclass based on the node type.
+     * @throws XPathExpressionException
+     * @throws SAXException
+     * @throws IOException
+     * @throws ParserConfigurationException
+     * @throws WSDLException
+     */
+    @Nullable
+    public static XSDElement getInstance(WSDLManagerRetrieval manager, Node element)
             throws XPathExpressionException, SAXException, IOException, ParserConfigurationException, WSDLException {
         XSDElement xsdElement;
-        if (node == null)
+        if (element == null) {
             return null;
-
-        String nodeNameWithPrefix = node.getNodeName();
-        String nodeName = Utils.splitPrefixes(node.getNodeName())[1];
-        String name = Utils.getAttrValueFromNode(node, "name");
-        String type = Utils.getAttrValueFromNode(node, "type");
+        }
+        boolean isQualified;
+        try {
+            isQualified = (boolean) element.getUserData("qualified");
+        } catch (Exception ex) {
+            isQualified = false;
+        }
+        // get nodeName. ie: XSD:complexType
+        String nodeNameWithPrefix = element.getNodeName();
+        // Split nodeName to get the bare name. ie: complexType
+        String nodeName = Utils.splitPrefixes(element.getNodeName())[1];
+        // Get element name. may be null
+        String name = Utils.getAttrValueFromNode(element, "name");
+        // get element type. may be null
+        String type = Utils.getAttrValueFromNode(element, "type");
         // Check if node is element
-
-        Node element = node;
-        Node elementTypeNode = null;
-        if (nodeName.equals("attribute"))
+        /**
+         * if this is an attribute, just ignore it.
+         */
+        if (nodeName.equals("attribute")) {
             return null;
+        }
+        // Get target namespace embedded during XPath retrieved.
         String tns = (String) element.getUserData("tns");
+        // If this node has a type attribute.. Usually means this is an <element>
         if (type != null) {
+            // Try parsing this element type as a simple type. ie: string, int, boolean, etc...
             try {
                 xsdElement = XSDElement.getInstanceForSimpleElement(manager, element, Utils.splitPrefixes(type)[1]);
                 xsdElement.setName(name);
                 return xsdElement;
             } catch (WSDLException e) {
+                // This element type is probably refers to another complex type.
                 if (e.getCode().equals(WSDLExceptionCode.XSD_NOT_SIMPLE_ELEMENT)) {
-
                     element = (Node) manager.getXSDManager()
                             .find(String.format(Locale.getDefault(), "/schema/*[name() != '%s' and @name = '%s']",
                                     nodeNameWithPrefix, Utils.splitPrefixes(type)[1]), XPathConstants.NODE);
                     xsdElement = XSDElement.getInstance(manager, element);
                     tns = (String) element.getUserData("tns");
+
+                    if (xsdElement == null) {
+                        return null;
+                    }
+
                     xsdElement.setName(name);
                     return xsdElement;
                 }
@@ -104,213 +216,137 @@ public abstract class XSDElement<T> {
             }
 
         }
+        // This node does not have a type attribute.
         try {
+            // Try parsing this xml node name as simple element
             xsdElement = XSDElement.getInstanceForSimpleElement(manager, element, nodeName);
             xsdElement.setName(name);
             return xsdElement;
         } catch (WSDLException e) {
-            // check if node name is already a type..
+            // try this node as a complex type.
             try {
                 xsdElement = XSDElement.getInstanceForComplexElement(manager, element);
                 xsdElement.setName(name);
                 return xsdElement;
             } catch (WSDLException e2) {
-                // not a complex element
+
+                // elemen is in fact a <element> with no type. Probably has a child type..                 
                 if (e2.getCode().equals(WSDLExceptionCode.XSD_NODE_IS_ELEMENT)) {
+                    // get element first valid child and parse it.
                     element = Utils.getFirstXMLChild(element);
                     element.setUserData("tns", tns, null);
+                    element.setUserData("qualified", isQualified, null);
+                    // Parse it recursively.
                     xsdElement = XSDElement.getInstance(manager, element);
+                    if (xsdElement == null) {
+                        return null;
+                    }
                     xsdElement.setName(name);
-                    // String tns = (String) element.getUserData("tns");
-                    xsdElement.setTargetNamespace(tns);
                     return xsdElement;
                 }
                 throw e;
             }
         }
 
-        // check if type is null, then grap first child..
-        // if (nodeName.equals("element")) {
-        // if (type == null) {
-        // elementTypeNode = Utils.getFirstXMLChild(node);
-        // } else {
-        // try {
-        // xsdElement = XSDElement.getInstanceForSimpleElement(manager, element,
-        // Utils.splitPrefixes(type)[1]);
-        // xsdElement.setName(name);
-        // return xsdElement;
-        // } catch (WSDLException e) {
-        // elementTypeNode = (Node) manager.getXSDManager().find(
-        // String.format(Locale.getDefault(), "/schema/*[@name='%s']",
-        // Utils.splitPrefixes(type)[1]),
-        // XPathConstants.NODE);
-        // }
-
-        // }
-        // xsdElement = XSDElement.getInstanceForComplexElement(manager,
-        // elementTypeNode);
-        // xsdElement.setName(name);
-        // return xsdElement;
-        // }
-        // try {
-        // xsdElement = XSDElement.getInstanceForSimpleElement(manager, element,
-        // Utils.splitPrefixes(type)[1]);
-        // xsdElement.setName(name);
-        // return xsdElement;
-        // } catch (Exception e) {
-        // elementTypeNode = (Node) manager.getXSDManager().find(
-        // String.format(Locale.getDefault(), "/schema/*[@name='%s']",
-        // Utils.splitPrefixes(type)[1]),
-        // XPathConstants.NODE);
-        // xsdElement = XSDElement.getInstanceForComplexElement(manager,
-        // elementTypeNode);
-        // xsdElement.setName(name);
-        // return xsdElement;
-        // }
-
-        // if (type[1] == null) {
-        // xsdElement = XSDElement.getInstance(manager, Utils.getFirstXMLChild(node));
-        // xsdElement.setName(name);
-        // return xsdElement;
-        // } else {
-        // try {
-        // xsdElement = XSDElement.getInstanceForSimpleElement(manager, node, type[1]);
-        // xsdElement.setName(name);
-        // return xsdElement;
-        // } catch (WSDLException e) {
-        // if (e.getCode().equals(WSDLExceptionCode.XSD_NOT_SIMPLE_ELEMENT)) {
-        // Node targetElementType = (Node) manager.getXSDManager().find(
-        // String.format(Locale.getDefault(), "/schema/element[@name='%s']", type[1]),
-        // XPathConstants.NODE);
-
-        // if (targetElementType != null) {
-        // xsdElement = XSDElement.getInstanceForComplexElement(manager,
-        // targetElementType);
-        // xsdElement.setName(name);
-        // return xsdElement;
-        // }
-        // }
-        // }
-
-        // }
-
-        // if (node == null)
-        // return null;
-        // String nodeName = Utils.splitPrefixes(node.getNodeName())[1];
-        // if (nodeName.equals("element"))
-        // nodeName = Utils.splitPrefixes(Utils.getAttrValueFromNode(node, "type"))[1];
-        // if (nodeName.equals("string"))
-        // return new XSDString(manager, node);
-        // else if (nodeName.equals("int") || nodeName.equals("integer"))
-        // return new XSDInteger(manager, node);
-        // else if (nodeName.equals("boolean"))
-        // return new XSDBoolean(manager, node);
-        // else if (nodeName.equals("complexType"))
-        // return XSDElement.getInstance(manager, Utils.getFirstXMLChild(node));
-        // else if (nodeName.equals("all"))
-        // return new XSDAll(manager, node);
-        // else if (nodeName.equals("sequence"))
-        // return new XSDSequence(manager, node);
-        // else if (nodeName.equals("choice"))
-        // return new XSDChoice(manager, node);
-        // else
-        // return null;
     }
 
-    private void setTargetNamespace(String tns) {
-        this.targetNamespace = tns;
-    }
-
+    /**
+     * Parse node for a Complex Type element
+     *
+     * @param manager WSDLManager instance injection
+     * @param node XML node to parse
+     * @return XSDComplexElement subclass or throws an exception.
+     * @throws WSDLException
+     * @throws XPathExpressionException
+     * @throws SAXException
+     * @throws IOException
+     * @throws ParserConfigurationException
+     */
     private static XSDComplexElement getInstanceForComplexElement(WSDLManagerRetrieval manager, Node node)
             throws WSDLException, XPathExpressionException, SAXException, IOException, ParserConfigurationException {
         String nodeName = Utils.splitPrefixes(node.getNodeName())[1];
 
-        if (nodeName.equals("element"))
+        if (nodeName.equals("element")) {
             throw new WSDLException(WSDLExceptionCode.XSD_NODE_IS_ELEMENT);
-        else if (nodeName.equals("all"))
+        } else if (nodeName.equals("all")) {
             return new XSDAll(manager, node);
-        else if (nodeName.equals("annotation"))
+        } else if (nodeName.equals("annotation")) {
             return new XSDAnnotation(manager, node);
-
-        else if (nodeName.equals("choice"))
+        } else if (nodeName.equals("choice")) {
             return new XSDChoice(manager, node);
-        else if (nodeName.equals("complexContent"))
+        } else if (nodeName.equals("complexContent")) {
             return new XSDComplexContent(manager, node);
-        else if (nodeName.equals("complexType"))
+        } else if (nodeName.equals("complexType")) {
             return new XSDComplexType(manager, node);
-        else if (nodeName.equals("simpleType"))
+        } else if (nodeName.equals("simpleType")) {
             return new XSDSimpleType(manager, node);
-        else if (nodeName.equals("simpleContent"))
+        } else if (nodeName.equals("simpleContent")) {
             return new XSDSimpleContent(manager, node);
-        else if (nodeName.equals("extension"))
+        } else if (nodeName.equals("extension")) {
             return new XSDExtention(manager, node);
-        else if (nodeName.equals("group"))
+        } else if (nodeName.equals("group")) {
             return new XSDGroup(manager, node);
-        else if (nodeName.equals("restriction"))
+        } else if (nodeName.equals("restriction")) {
             return new XSDRestriction(manager, node);
-        else if (nodeName.equals("sequence"))
+        } else if (nodeName.equals("sequence")) {
             return new XSDSequence(manager, node);
-        else if (nodeName.equals("union"))
+        } else if (nodeName.equals("union")) {
             return new XSDUnion(manager, node);
-        else {
+        } else {
             throw new WSDLException(WSDLExceptionCode.XSD_NOT_COMPLEX_TYPE);
         }
     }
 
+    /**
+     * Parse node as XSDSimpleElement type
+     *
+     * @param manager WSDLManager instance injection
+     * @param node XML node to parse
+     * @return XSDSimpleElement subclass or throws an exception.
+     * @param type XSD type attribute
+     * @return
+     * @throws WSDLException
+     */
     private static XSDSimpleElement getInstanceForSimpleElement(WSDLManagerRetrieval manager, Node node, String type)
             throws WSDLException {
         XSDSimpleElement element;
 
-        try {
-            XSDSimpleElementType simpleType = XSDSimpleElementType.parse(type);
-            if (simpleType.equals(XSDSimpleElementType.LIST))
+        XSDSimpleElementType simpleType = XSDSimpleElementType.parse(type);
+        switch (simpleType) {
+            case LIST:
                 element = new XSDList(manager, node);
-            else if (simpleType.equals(XSDSimpleElementType.ANY))
+                break;
+            case ANY:
                 element = new XSDAny(manager, node);
-            else
+                break;
+            default:
                 element = new XSDSimpleElement(manager, node, simpleType);
-            return element;
-        } catch (WSDLException e) {
-            throw new WSDLException(WSDLExceptionCode.XSD_NOT_SIMPLE_ELEMENT);
+                break;
         }
-
-        // try {
-        // XSDNumericType numericType = XSDNumericType.parse(type);
-        // element = new XSDNumeric(manager, node);
-        // ((XSDNumeric) element).setNumericType(numericType);
-        // return element;
-        // } catch (WSDLException e) {
-        // if (type.equals("string"))
-        // return new XSDString(manager, node);
-
-        // else if (type.equals("list")) {
-        // String[] itemType = Utils.splitPrefixes(Utils.getAttrValueFromNode(node,
-        // "itemType"));
-        // XSDElement itemTypeCLS = XSDElement.getInstanceForSimpleElement(manager,
-        // node, itemType[1]);
-
-        // element = new XSDList(manager, node);
-        // } else if (type.equals("boolean"))
-
-        // return new XSDBoolean(manager, node);
-        // else
-        // throw new WSDLException(WSDLExceptionCode.XSD_NOT_SIMPLE_ELEMENT);
-        // }
+        return element;
     }
 
+    /**
+     * Load attributes for this node.
+     */
     private void loadAttributes() {
         this.setNillable(Utils.getAttrValueFromNode(this.node, "nillable"));
         this.setName(Utils.getAttrValueFromNode(this.node, "name"));
         this.setMaxOccurs(Utils.getAttrValueFromNode(this.node, "maxOccurs"));
         this.setMinOccurs(Utils.getAttrValueFromNode(this.node, "minOccurs"));
         this.setDefaultValue(Utils.getAttrValueFromNode(this.node, "default"));
-        this.setFixedValue((T) Utils.getAttrValueFromNode(this.node, "fixed"));
+        this.setFixedValue(Utils.getAttrValueFromNode(this.node, "fixed"));
     }
 
-    protected abstract void setFixedValue(T fixedValue);
+    /**
+     * Set fixed value for this element if there is one
+     *
+     * @param fixedValue
+     */
+    protected abstract void setFixedValue(String fixedValue);
 
     /**
-     * return if the element is nillable..
+     * return if the element is Nill-able..
      */
     public boolean isNillable() {
         return this.nillable;
@@ -320,8 +356,9 @@ public abstract class XSDElement<T> {
      * @param value nillable
      */
     public void setNillable(String value) {
-        if (value == null)
+        if (value == null) {
             return;
+        }
         this.nillable = Boolean.parseBoolean(value);
     }
 
@@ -336,8 +373,9 @@ public abstract class XSDElement<T> {
      * @param value the maximum occur value to set
      */
     public void setMaxOccurs(String value) {
-        if (value == null)
+        if (value == null) {
             return;
+        }
         if (value.equals("unbounded")) {
             this.maxOccurs = -1;
             return;
@@ -346,18 +384,20 @@ public abstract class XSDElement<T> {
     }
 
     /**
-     * return minmum occurrance..
+     * return minimum occurrence..
+     * @return this node min occurs or -1;
      */
     public int getMinOccurs() {
         return this.minOccurs;
     }
 
     /**
-     * @param value the minumum occur value to set
+     * @param value the miniumum occur value to set
      */
     public void setMinOccurs(String value) {
-        if (value == null)
+        if (value == null) {
             return;
+        }
 
         this.minOccurs = Integer.parseInt(value);
     }
@@ -372,7 +412,7 @@ public abstract class XSDElement<T> {
     /**
      * @return the default value
      */
-    public T getDefaultValue() {
+    public String getDefaultValue() {
         return this.value;
     }
 
@@ -387,8 +427,9 @@ public abstract class XSDElement<T> {
      * @param name the name to set
      */
     public void setName(String name) {
-        if (name == null && this.name != null)
+        if (name == null && this.name != null) {
             return;
+        }
         String[] tmp = Utils.splitPrefixes(name);
         this.prefix = tmp[0];
         this.name = tmp[1];
@@ -407,47 +448,102 @@ public abstract class XSDElement<T> {
     /**
      * @return the value
      */
-    public T getValue() {
+    public String getValue() {
         return this.value;
     }
 
     /**
      * @param value the value to set
      */
-    public void setValue(T value) {
+    public void setValue(String value) {
         this.value = value;
-    }
-
-    public Class<?> getType() {
-        return this.type;
     }
 
     public String getPrefix() {
         return this.prefix;
     }
 
-    public void toESQL() {
-        this.addHelpComment();
+    /**
+     * Generate ESQL lines for this element and its children.
+     *
+     * @throws WSDLException
+     */
+    public void toESQL() throws WSDLException {
+        this.addHelpComments();
     }
 
-    protected void addHelpComment() {
-        this.manager.getESQLManager().addComment(ESQLVerbosity.VALUE_HELP, this.getNodeHelp());
+    /**
+     * Add helpComments
+     */
+    protected void addHelpComments() {
+        if (this instanceof XSDAnnotation) {
+            this.manager.getESQLManager().addComment(ESQLVerbosity.DOCUMENTATION, this.getNodeHelp());
+        } else {
+            this.manager.getESQLManager().addComment(ESQLVerbosity.NODE_HELP, this.getNodeHelp());
+        }
+
         if (this.minOccurs == 0) {
             this.manager.getESQLManager().addComment(ESQLVerbosity.MULTIPLICITY, "Optional");
+        } else if (this.minOccurs == 1 && this.minOccurs == this.maxOccurs) {
+            this.manager.getESQLManager().addComment(ESQLVerbosity.MULTIPLICITY, String.format(Locale.getDefault(), "Required"));
+        } else if (this.minOccurs > 1 && this.minOccurs == this.maxOccurs) {
+            this.manager.getESQLManager().addComment(ESQLVerbosity.MULTIPLICITY, String.format(Locale.getDefault(), "Must appear exactly %s times", this.minOccurs));
+        } else if (this.minOccurs > 1) {
+            this.manager.getESQLManager().addComment(ESQLVerbosity.MULTIPLICITY, String.format(Locale.getDefault(), "Must appear more than %s and less than %s", this.minOccurs, this.maxOccurs));
+        }
+        if (this.nillable) {
+            this.manager.getESQLManager().addComment(ESQLVerbosity.VALUE_HELP, String.format(Locale.getDefault(), "This field is nillable."));
+        }
+        if (this.fixedValue != null) {
+            this.manager.getESQLManager().addComment(ESQLVerbosity.VALUE_HELP, String.format(Locale.getDefault(), "This field has a fixed value: %s", this.fixedValue));
         }
     }
 
+    /**
+     * Set a different namespace different from this node's parent. (if it is
+     * imported from another XSD file with different namespace)
+     *
+     * @param targetTamespace
+     */
     public void explicitlySetTargetNameSpace(String targetTamespace) {
         this.node.setUserData("EX_tns", targetTamespace, null);
     }
 
+    /**
+     * Set this element name and prefix to null.
+     */
     public void nullifyChildrenName() {
         this.name = null;
         this.prefix = null;
     }
 
+    /**
+     * Override this if the field has any printable parameters.
+     *
+     * @return
+     */
     protected boolean hasPrintable() {
         return false;
     }
 
+    /**
+     * get the appropriate prefix for element based on if it come from another
+     * schema and whether that schema use qualified form or not.
+     *
+     * @return prefix or null
+     * @throws WSDLException
+     */
+    protected String getPrintablePrefix() throws WSDLException {
+        String _prefix = this.prefix;
+        if (this.prefix == null) {
+            String ns = this.getExplicitlySetTargetTamespace();
+            if (ns == null) {
+                ns = this.getTargetTamespace();
+            }
+            if ((isQualified())) {
+                _prefix = this.manager.getPrefix(ns);
+            }
+        }
+        return _prefix;
+    }
 }

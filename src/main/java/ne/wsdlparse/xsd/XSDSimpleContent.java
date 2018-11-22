@@ -1,4 +1,4 @@
-package ne.wsdlparse.xsd;
+package ne.wsdlparser.lib.xsd;
 
 import java.io.IOException;
 
@@ -8,31 +8,30 @@ import javax.xml.xpath.XPathExpressionException;
 import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
 
-import ne.wsdlparse.WSDLManagerRetrieval;
-import ne.wsdlparse.exception.WSDLException;
-import ne.wsdlparse.utility.ConsoleStyle;
-import ne.wsdlparse.xsd.constant.XSDSimpleElementType;
-import ne.wsdlparse.xsd.restriction.XSDRestrictionParam;
+import ne.wsdlparser.lib.WSDLManagerRetrieval;
+import ne.wsdlparser.lib.exception.WSDLException;
+import ne.wsdlparser.lib.xsd.constant.XSDSimpleElementType;
 
-public class XSDSimpleContent extends XSDComplexElement<XSDElement<?>> {
+public class XSDSimpleContent extends XSDComplexElement {
     private XSDSimpleElementType simpleType;
 
     public XSDSimpleContent(WSDLManagerRetrieval manager, Node node)
             throws XPathExpressionException, SAXException, IOException, ParserConfigurationException, WSDLException {
-        super(manager, node, XSDComplexType.class);
+        super(manager, node);
     }
 
     @Override
     protected Boolean isESQLPrintable() {
         return true;
     }
-
+  
     @Override
     protected boolean validateChild(Node child, XSDElement element)
             throws XPathExpressionException, SAXException, IOException, ParserConfigurationException, WSDLException {
 
         // child is extention..
         if (element instanceof XSDExtention) {
+            
             this.simpleType = ((XSDExtention) element).getSimpleType();
             return false;
         }

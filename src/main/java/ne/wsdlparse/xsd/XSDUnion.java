@@ -1,4 +1,4 @@
-package ne.wsdlparse.xsd;
+package ne.wsdlparser.lib.xsd;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -11,18 +11,18 @@ import javax.xml.xpath.XPathExpressionException;
 import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
 
-import ne.wsdlparse.Utils;
-import ne.wsdlparse.WSDLManagerRetrieval;
-import ne.wsdlparse.constant.ESQLVerbosity;
-import ne.wsdlparse.exception.WSDLException;
-import ne.wsdlparse.xsd.constant.XSDSimpleElementType;
+import ne.wsdlparser.lib.utility.Utils;
+import ne.wsdlparser.lib.WSDLManagerRetrieval;
+import ne.wsdlparser.lib.constant.ESQLVerbosity;
+import ne.wsdlparser.lib.exception.WSDLException;
+import ne.wsdlparser.lib.xsd.constant.XSDSimpleElementType;
 
 public class XSDUnion extends XSDComplexElement {
     private ArrayList<XSDSimpleElementType> simpleTypes;
 
     public XSDUnion(WSDLManagerRetrieval manager, Node node)
             throws XPathExpressionException, SAXException, IOException, ParserConfigurationException, WSDLException {
-        super(manager, node, XSDComplexType.class);
+        super(manager, node);
     }
 
     // TODO: load children throw memberTypes
@@ -69,7 +69,7 @@ public class XSDUnion extends XSDComplexElement {
     }
 
     @Override
-    public void toESQL() {
+    public void toESQL() throws WSDLException{
         String[] types = new String[this.simpleTypes.size()];
         int i = 0;
         for (XSDSimpleElementType type : this.simpleTypes) {

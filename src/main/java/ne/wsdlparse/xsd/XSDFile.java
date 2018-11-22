@@ -1,4 +1,4 @@
-package ne.wsdlparse.xsd;
+package ne.wsdlparser.lib.xsd;
 
 import java.io.BufferedInputStream;
 import java.io.File;
@@ -12,6 +12,8 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Locale;
 import java.util.Map.Entry;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import javax.xml.namespace.NamespaceContext;
 import javax.xml.namespace.QName;
@@ -29,9 +31,12 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
-import ne.wsdlparse.Utils;
+import ne.wsdlparser.lib.utility.Utils;
+import ne.wsdlparser.lib.exception.WSDLException;
+import ne.wsdlparser.lib.exception.WSDLExceptionCode;
 
 public class XSDFile {
+
     Document xsd;
     private XPath xPath;
     private HashMap<String, String> namespaces = new HashMap<String, String>();
@@ -41,12 +46,14 @@ public class XSDFile {
     private HashMap<String, Node> inlineImports = new HashMap<String, Node>();
 
     private String filePath;
-    private String workingdir;;
+    private String workingdir;
+    ;
     private final static String NEW_ROOT = "/root/";
     private Boolean isRootModified = false;
+    private boolean qualified;
 
-    public XSDFile(String filePath, String namespace) throws FileNotFoundException, SAXException, IOException,
-            ParserConfigurationException, XPathExpressionException {
+    public XSDFile(String filePath, String namespace) throws WSDLException, ParserConfigurationException {
+
         if (Utils.validateURI(filePath)) {
 
             String dir = System.getProperty("java.io.tmpdir");
@@ -62,42 +69,73 @@ public class XSDFile {
                     while ((bytesRead = in.read(dataBuffer, 0, 1024)) != -1) {
                         fileOutputStream.write(dataBuffer, 0, bytesRead);
                     }
+                
                 }
                 filePath = filetemp.getAbsolutePath();
-            } catch (Exception e) {
-                e.printStackTrace();
-                System.exit(1);
+            } catch (FileNotFoundException ex) {
+                Logger.getLogger(XSDFile.class.getName()).log(Level.SEVERE, null, ex);
+                throw new WSDLException(WSDLExceptionCode.XSD_SCHEMA_FILE_NOT_FOUND, "Schema file " + filePath + " not found!");
+            } catch (IOException ex) {
+                Logger.getLogger(XSDFile.class.getName()).log(Level.SEVERE, null, ex);
+                throw new WSDLException(WSDLExceptionCode.XSD_SCHEMA_FILE_NOT_FOUND, "Schema file " + filePath + " not found!");
             }
         }
 
         this.filePath = filePath;
         this.targetNS = namespace;
-        File file = new File(filePath);
-        this.workingdir = file.getParent();
-        this.xsd = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(new FileInputStream(file));
-        this.load(filePath);
 
+        try {
+            File file = new File(filePath);
+            this.workingdir = file.getParent();
+            this.xsd = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(new FileInputStream(file));
+            this.load();
+            return;
+        } catch (FileNotFoundException e) {
+            throw new WSDLException(WSDLExceptionCode.XSD_SCHEMA_FILE_NOT_FOUND, "Schema file " + filePath + " not found!");
+        } catch (SAXException ex) {
+            Logger.getLogger(XSDFile.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (IOException ex) {
+            Logger.getLogger(XSDFile.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (XPathExpressionException ex) {
+            Logger.getLogger(XSDFile.class.getName()).log(Level.SEVERE, null, ex);
+        }
+
+        throw new WSDLException(WSDLExceptionCode.XSD_SCHEMA_LOADING_ERROR);
     }
 
-    public XSDFile(String workingdir, NodeList schema)
-            throws SAXException, IOException, ParserConfigurationException, XPathExpressionException {
-        this.workingdir = workingdir;
+    public XSDFile(String workingdir, NodeList schema) throws WSDLException {
+        try {
+            this.workingdir = workingdir;
 
-        this.xsd = DocumentBuilderFactory.newInstance().newDocumentBuilder().newDocument();
-        Element root = this.xsd.createElement("root");
-        this.xsd.appendChild(root);
-        this.targetNS = null;
-        this.isRootModified = true;
-        for (int i = 0; i < schema.getLength(); i++) {
-            Node node = schema.item(i);
-            node = this.xsd.importNode(node, true);
-            root.appendChild(node);
+            this.xsd = DocumentBuilderFactory.newInstance().newDocumentBuilder().newDocument();
+
+            Element root = this.xsd.createElement("root");
+            this.xsd.appendChild(root);
+            this.targetNS = null;
+            this.isRootModified = true;
+            for (int i = 0; i < schema.getLength(); i++) {
+                Node node = schema.item(i);
+                node = this.xsd.importNode(node, true);
+                root.appendChild(node);
+            }
+            this.load();
+            return;
+        } catch (SAXException ex) {
+            Logger.getLogger(XSDFile.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (IOException ex) {
+            Logger.getLogger(XSDFile.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (ParserConfigurationException ex) {
+            Logger.getLogger(XSDFile.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (XPathExpressionException ex) {
+            Logger.getLogger(XSDFile.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (WSDLException ex) {
+            Logger.getLogger(XSDFile.class.getName()).log(Level.SEVERE, null, ex);
         }
-        this.load(filePath);
+        throw new WSDLException(WSDLExceptionCode.XSD_SCHEMA_LOADING_ERROR);
     }
 
     private void _import(String filePath, String namespace) throws FileNotFoundException, XPathExpressionException,
-            SAXException, IOException, ParserConfigurationException {
+            SAXException, IOException, ParserConfigurationException, WSDLException {
         if (Utils.validateURI(filePath)) {
             this.imports.add(new XSDFile(filePath, namespace));
         } else {
@@ -107,7 +145,7 @@ public class XSDFile {
     }
 
     private void include(String filePath) throws FileNotFoundException, SAXException, IOException,
-            ParserConfigurationException, XPathExpressionException {
+            ParserConfigurationException, XPathExpressionException, WSDLException {
         if (Utils.validateURI(filePath)) {
             this.includes.add(new XSDFile(filePath, this.targetNS));
         } else {
@@ -116,12 +154,21 @@ public class XSDFile {
         }
     }
 
-    private void load(String filePath) throws FileNotFoundException, SAXException, IOException,
-            ParserConfigurationException, XPathExpressionException {
+    private void setQualified() throws XPathExpressionException {
+        Node schema = (Node) this.xPath.compile(this.prepareXPath("schema")).evaluate(this.xsd, XPathConstants.NODE);
+        String temp = Utils.getAttrValueFromNode(schema, "elementFormDefault");
+        this.qualified = temp != null && temp.toLowerCase().equals("qualified");
+    }
+
+    private void load() throws SAXException, IOException,
+            ParserConfigurationException, XPathExpressionException, WSDLException {
 
         this.xPath = XPathFactory.newInstance().newXPath();
+
         this.loadNamespaces();
         // load includes if any
+
+        setQualified();
         NodeList includes = (NodeList) this.xPath.compile(this.prepareXPath("schema/include")).evaluate(this.xsd,
                 XPathConstants.NODESET);
         for (int i = 0; i < includes.getLength(); i++) {
@@ -131,8 +178,9 @@ public class XSDFile {
         // load imports if any
         NodeList imports = (NodeList) this.xPath.compile(this.prepareXPath("schema/import")).evaluate(this.xsd,
                 XPathConstants.NODESET);
-        if (imports != null)
+        if (imports != null) {
             this.imports = new ArrayList<XSDFile>();
+        }
         for (int i = 0; i < imports.getLength(); i++) {
             Node _import = imports.item(i);
             // String ns = Utils.getAttrValueFromNode(_import, "namespace");
@@ -146,8 +194,9 @@ public class XSDFile {
                         .evaluate(this.xsd, XPathConstants.NODE);
                 this.inlineImports.put(ns, _schema);
             } else {
-                if (this.imports == null)
+                if (this.imports == null) {
                     this.imports = new ArrayList<XSDFile>();
+                }
                 this._import(schemaLocation, ns);
             }
         }
@@ -155,16 +204,19 @@ public class XSDFile {
 
     private String prepareXPath(String xpath) {
         if (!this.isRootModified) {
-            if (xpath.startsWith(NEW_ROOT))
+            if (xpath.startsWith(NEW_ROOT)) {
                 xpath = xpath.replace(NEW_ROOT, "");
+            }
             return xpath;
         }
-        if (xpath.startsWith(NEW_ROOT))
+        if (xpath.startsWith(NEW_ROOT)) {
             return xpath;
-        if (xpath.startsWith("/"))
+        }
+        if (xpath.startsWith("/")) {
             return NEW_ROOT.concat(xpath.substring(1));
-        else
+        } else {
             return NEW_ROOT.concat(xpath);
+        }
     }
 
     private void loadNamespaces() throws XPathExpressionException {
@@ -189,8 +241,9 @@ public class XSDFile {
 
             public String getPrefix(String namespaceURI) {
                 for (java.util.Map.Entry<String, String> entry : XSDFile.this.namespaces.entrySet()) {
-                    if (entry.getValue().equals(namespaceURI))
+                    if (entry.getValue().equals(namespaceURI)) {
                         return (String) entry.getKey();
+                    }
                 }
                 return null;
             }
@@ -203,8 +256,9 @@ public class XSDFile {
     }
 
     public Object find(String xpath, Object source, QName returnType) throws XPathExpressionException {
-        if (source == null)
+        if (source == null) {
             return null;
+        }
         return this.xPath.compile(xpath).evaluate(source, returnType);
     }
 
@@ -213,9 +267,16 @@ public class XSDFile {
         Object node = null;
         int i = 0;
         node = this.find(newxpath, this.xsd, returnType);
+        
 
-        if (node == null)
+        if (node == null) {
             node = this.findInChildren(xpath, returnType);
+        } else {
+            ((Node) node).setUserData("qualified", isQualified(), null);
+            if (isQualified()) {                
+                ((Node) node).setUserData("tns", this.targetNS, null);
+            }
+        }
 
         return node;
     }
@@ -225,8 +286,10 @@ public class XSDFile {
         for (XSDFile file : this.includes) {
             node = file.find(xpath, returnType);
             if (node != null) {
-                if (node instanceof Node && ((Node) node).getUserData("tns") == null)
+                if (node instanceof Node && ((Node) node).getUserData("tns") == null) {
                     ((Node) node).setUserData("tns", file.targetNS, null);
+                    ((Node) node).setUserData("qualified", file.isQualified(), null);
+                }
                 return node;
             }
         }
@@ -234,16 +297,23 @@ public class XSDFile {
         for (XSDFile file : this.imports) {
             node = file.find(xpath, returnType);
             if (node != null) {
-                if (node instanceof Node && ((Node) node).getUserData("tns") == null)
+                if (node instanceof Node && ((Node) node).getUserData("tns") == null) {
                     ((Node) node).setUserData("tns", file.targetNS, null);
+                    ((Node) node).setUserData("qualified", file.isQualified(), null);
+                }
                 return node;
             }
         }
         for (Entry<String, Node> entry : this.inlineImports.entrySet()) {
             node = this.find(xpath, entry.getValue(), returnType);
             if (node != null) {
-                if (node instanceof Node && ((Node) node).getUserData("tns") == null)
+                if (node instanceof Node && ((Node) node).getUserData("tns") == null) {
                     ((Node) node).setUserData("tns", entry.getKey(), null);
+
+                    Node nn = entry.getValue();
+                    String elementFormDefault = Utils.getAttrValueFromNode(nn, "elementFormDefault");
+                    ((Node) node).setUserData("qualified", elementFormDefault != null && elementFormDefault.toLowerCase().equals("qualified"), null);
+                }
                 return node;
             }
         }
@@ -255,17 +325,20 @@ public class XSDFile {
     public String getNamespaceURI(String prefix) {
         String ns = null;
         ns = this.xPath.getNamespaceContext().getNamespaceURI(prefix);
-        if (ns != null)
+        if (ns != null) {
             return ns;
+        }
         for (XSDFile file : this.includes) {
             ns = file.getNamespaceURI(prefix);
-            if (ns != null)
+            if (ns != null) {
                 return ns;
+            }
         }
         for (XSDFile file : this.imports) {
             ns = file.getNamespaceURI(prefix);
-            if (ns != null)
+            if (ns != null) {
                 return ns;
+            }
         }
 
         return null;
@@ -274,20 +347,27 @@ public class XSDFile {
     public String getPrefix(String ns) {
         String prefix = null;
         prefix = this.xPath.getNamespaceContext().getPrefix(ns);
-        if (prefix != null)
+        if (prefix != null) {
             return prefix;
+        }
         for (XSDFile file : this.includes) {
             prefix = file.getPrefix(ns);
-            if (prefix != null)
+            if (prefix != null) {
                 return prefix;
+            }
         }
         for (XSDFile file : this.imports) {
             prefix = file.getPrefix(ns);
-            if (prefix != null)
+            if (prefix != null) {
                 return prefix;
+            }
         }
 
         return null;
+    }
+
+    private boolean isQualified() {
+        return this.qualified;
     }
 
 }

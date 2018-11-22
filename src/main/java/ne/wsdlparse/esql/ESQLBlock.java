@@ -1,51 +1,139 @@
-package ne.wsdlparse.esql;
+package ne.wsdlparser.lib.esql;
 
 import java.util.ArrayList;
 import java.util.HashSet;
 
-import ne.wsdlparse.WSDLManagerRetrieval;
-import ne.wsdlparse.constant.ESQLVerbosity;
-import ne.wsdlparse.esql.constant.ESQLDataType;
-import ne.wsdlparse.esql.constant.ESQLSource;
+import ne.wsdlparser.lib.WSDLManagerRetrieval;
+import ne.wsdlparser.lib.constant.ESQLVerbosity;
+import ne.wsdlparser.lib.esql.constant.ESQLDataType;
+import ne.wsdlparser.lib.esql.constant.ESQLSource;
 
+/**
+ * Block of ESQL lines
+ *
+ * @author nour
+ */
 public class ESQLBlock {
-    private WSDLManagerRetrieval manager;
-    private ArrayList<ESQLLine> elementsLines;
-    private ArrayList<ESQLLine> nsDeclarations;
-    private HashSet<String> prefixes;
-    private boolean lastWasEmpty = false;
-    private ESQLVerbosity[] verbosities = ESQLVerbosity.values();;
 
-    public ESQLBlock(WSDLManagerRetrieval manager) {
-        this.manager = manager;
-        this.elementsLines = new ArrayList<ESQLLine>();
-        this.nsDeclarations = new ArrayList<ESQLLine>();
-        this.prefixes = new HashSet<String>();
+    private final WSDLManagerRetrieval manager;
+    private final ArrayList<ESQLLine> elementsLines;
+    private final ArrayList<ESQLLine> nsDeclarations;
+    private final HashSet<String> prefixes;
+    private boolean lastWasEmpty = false;
+
+    public ArrayList<ESQLLine> getElementsLines() {
+        return elementsLines;
     }
 
+    /**
+     *
+     * @param manager
+     */
+    public ESQLBlock(WSDLManagerRetrieval manager) {
+        this.manager = manager;
+        this.elementsLines = new ArrayList<>();
+        this.nsDeclarations = new ArrayList<>();
+        this.prefixes = new HashSet<>();
+    }
+
+    /**
+     * Add a line to the blokc
+     *
+     * @param line
+     */
     void addLine(ESQLLine line) {
         this.elementsLines.add(line);
         this.lastWasEmpty = false;
     }
 
+    /**
+     * add a prefix to the block with no duplicates.
+     *
+     * @param prefix
+     */
     void addPrefix(String prefix) {
-        if (prefix == null)
+        if (prefix == null) {
             return;
+        }
         this.prefixes.add(prefix);
     }
 
-    private void generateNSLines() {
+    /**
+     *
+     * Generate NS lines from the set of prefix used in this block..
+     *
+     * @return
+     */
+    public ArrayList<ESQLLine> generateNSLines() {
         this.nsDeclarations.clear();
         for (String prefix : prefixes) {
             this.nsDeclarations
                     .add(new ESQLDeclareLine(prefix, ESQLDataType.NAMESPACE, this.manager.getNamespaceURI(prefix)));
         }
+        return this.nsDeclarations;
     }
 
+    /**
+     * Print line as output with colors
+     */
     public void printOutputSetters() {
         this.printESQL(ESQLSource.OUTPUT, true);
     }
-    private void printESQL(ESQLSource source, boolean useRef){
+
+    /**
+     * Generate ESQL lines and returns them as a list.
+     *
+     * @param source Input/Output
+     * @param useRef REFERENCE/ESQL Type
+     * @param useColors true to use colors.
+     * @return
+     */
+    public ArrayList<String> getLinesAsList(ESQLSource source, boolean useRef, boolean useColors) {
+        ArrayList<String> lines = new ArrayList<>();
+        this.generateNSLines();
+        for (ESQLLine line : this.nsDeclarations) {
+            line.setSource(source);
+            line.useReferences(useRef);
+            lines.add(line.generate(useColors));
+//            lines.append(System.getProperty("line.separator"));
+        }
+        for (ESQLLine line : this.elementsLines) {
+            line.setSource(source);
+            line.useReferences(useRef);
+            lines.add(line.generate(useColors));
+//            lines.append(System.getProperty("line.separator"));
+
+        }
+        return lines;
+
+    }
+
+    /**
+     * Generate ESQL lines and returns as String block
+     *
+     * @param source Input/Output
+     * @param useRef REFERENCE/ESQL Type
+     * @param useColors true to use colors.
+     * @return String block of Lines
+     */
+    public String getLinesAsString(ESQLSource source, boolean useRef, boolean useColors) {
+        StringBuilder lines = new StringBuilder();
+        ArrayList<String> lineList = this.getLinesAsList(source, useRef, useColors);
+        for (String line : lineList) {
+            lines.append(line);
+            lines.append(System.getProperty("line.separator"));
+        }
+        return lines.toString();
+
+    }
+
+    /**
+     * Print lines to the console with colors (bash)..
+     *
+     * @param source
+     * @param useRef
+     */
+    private void printESQL(ESQLSource source, boolean useRef) {
         this.generateNSLines();
         for (ESQLLine line : this.nsDeclarations) {
             line.setSource(source);
@@ -55,55 +143,40 @@ public class ESQLBlock {
         for (ESQLLine line : this.elementsLines) {
             line.setSource(source);
             line.useReferences(useRef);
-            if (line instanceof ESQLCommentLine) {
-                for (ESQLVerbosity verbosity : this.verbosities) {
-                    if (verbosity.equals(((ESQLCommentLine) line).getVerbosity())) {
-                        line.print();
-                        break;
-                    }
-                }
-                continue;
-            }
             line.print();
 
         }
     }
+
+    /**
+     * print lines as Input with colors
+     */
     public void printInputVariables() {
-        this.printESQL(ESQLSource.INPUT, false);
+        this.printESQL(ESQLSource.INPUT, true);
     }
+
+    /**
+     * print lines as output with colors
+     */
     public void printInputReferences() {
         this.printESQL(ESQLSource.INPUT, true);
     }
 
-    public String generate(ESQLSource type) {
-        this.generateNSLines();
-        StringBuilder builder = new StringBuilder();
-        String newLine = System.getProperty("line.separator");
-        for (ESQLLine line : this.nsDeclarations) {
-            builder.append(line.generate(false));
-            builder.append(newLine);
-        }
-        for (ESQLLine line : this.elementsLines) {
-            if (line instanceof ESQLCommentLine) {
-                for (ESQLVerbosity verbosity : this.verbosities) {
-                    if (verbosity.equals(((ESQLCommentLine) line).getVerbosity())) {
-                        break;
-                    }
-                }
-                continue;
-            }
-            builder.append(line.generate(false));
-            builder.append(newLine);
-        }
-        return builder.toString();
-    }
-
+    /**
+     * Add an empty line.
+     *
+     * @param allowMultiSuccessiveEmpty false to prevent successive empty lines.
+     */
     public void addEmptyLine(boolean allowMultiSuccessiveEmpty) {
-        if (!this.lastWasEmpty || (allowMultiSuccessiveEmpty && this.lastWasEmpty))
-            this.elementsLines.add(new ESQLCommentLine(ESQLVerbosity.EMPTY, null));
+        if (!this.lastWasEmpty || (allowMultiSuccessiveEmpty && this.lastWasEmpty)) {
+            this.elementsLines.add(new ESQLCommentLine(ESQLVerbosity.EMPTY_LINES, null));
+        }
         this.lastWasEmpty = true;
     }
 
+    /**
+     * Clear block of lines, prefixes, and namespaces..
+     */
     public void clear() {
         this.elementsLines.clear();
         this.prefixes.clear();
@@ -111,7 +184,4 @@ public class ESQLBlock {
         this.lastWasEmpty = false;
     }
 
-    public void setVerbosity(ESQLVerbosity... verbosity) {
-        this.verbosities = verbosity;
-    }
 }

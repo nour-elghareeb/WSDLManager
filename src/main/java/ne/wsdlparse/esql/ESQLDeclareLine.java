@@ -1,11 +1,26 @@
-package ne.wsdlparse.esql;
+package ne.wsdlparser.lib.esql;
 
 import java.util.Locale;
 
-import ne.wsdlparse.esql.constant.ESQLDataType;
-import ne.wsdlparse.utility.ConsoleStyle;
-
+import ne.wsdlparser.lib.esql.constant.ESQLDataType;
+import ne.wsdlparser.lib.utility.ConsoleStyle;
+/**
+ * ESQL declaration line implementation
+ * @author nour
+ */
 public class ESQLDeclareLine extends ESQLLine {
+
+    public String getParam() {
+        return param;
+    }
+
+    public ESQLDataType getType() {
+        return type;
+    }
+
+    public String getDefaultValue() {
+        return defaultValue;
+    }
     private String param;
     private ESQLDataType type;
     private String defaultValue = "";
@@ -28,7 +43,9 @@ public class ESQLDeclareLine extends ESQLLine {
         return String.format(Locale.getDefault(), "DECLARE %s %s '%s';", this.param, this.type.getValue(),
                 this.defaultValue);
     }
-
+    /**
+     * print line with colors
+     */
     @Override
     public void print() {
         String line = String.format(Locale.getDefault(), "%s %s %s '%s';",

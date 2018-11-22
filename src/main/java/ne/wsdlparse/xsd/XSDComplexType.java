@@ -1,4 +1,4 @@
-package ne.wsdlparse.xsd;
+package ne.wsdlparser.lib.xsd;
 
 import java.io.IOException;
 
@@ -8,18 +8,18 @@ import javax.xml.xpath.XPathExpressionException;
 import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
 
-import ne.wsdlparse.WSDLManagerRetrieval;
-import ne.wsdlparse.exception.WSDLException;
-import ne.wsdlparse.xsd.constant.XSDSimpleElementType;
+import ne.wsdlparser.lib.WSDLManagerRetrieval;
+import ne.wsdlparser.lib.exception.WSDLException;
+import ne.wsdlparser.lib.xsd.constant.XSDSimpleElementType;
 
-public class XSDComplexType<T> extends XSDComplexElement<XSDElement<?>> {
+public class XSDComplexType<T> extends XSDComplexElement {
 
     private XSDSimpleElementType simpleType;
     private boolean hasList;
 
     public XSDComplexType(WSDLManagerRetrieval manager, Node node)
             throws XPathExpressionException, SAXException, IOException, ParserConfigurationException, WSDLException {
-        super(manager, node, XSDComplexType.class);
+        super(manager, node);
     }
 
     @Override
@@ -45,7 +45,7 @@ public class XSDComplexType<T> extends XSDComplexElement<XSDElement<?>> {
     }
 
     @Override
-    public void toESQL() {
+    public void toESQL() throws WSDLException{
         if (this.simpleType == null) {
             super.toESQL();
             return;

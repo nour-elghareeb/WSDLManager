@@ -1,4 +1,4 @@
-package ne.wsdlparse.xsd;
+package ne.wsdlparser.lib.xsd;
 
 import java.io.IOException;
 import java.util.Locale;
@@ -9,20 +9,21 @@ import javax.xml.xpath.XPathExpressionException;
 import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
 
-import ne.wsdlparse.Utils;
-import ne.wsdlparse.WSDLManagerRetrieval;
-import ne.wsdlparse.exception.WSDLException;
+import ne.wsdlparser.lib.utility.Utils;
+import ne.wsdlparser.lib.WSDLManagerRetrieval;
+import ne.wsdlparser.lib.exception.WSDLException;
 
-public class XSDChoice extends XSDComplexElement<XSDElement<?>> {
+public class XSDChoice extends XSDComplexElement {
 
     public XSDChoice(WSDLManagerRetrieval manager, Node node)
             throws XPathExpressionException, SAXException, IOException, ParserConfigurationException, WSDLException {
-        super(manager, node, XSDChoice.class);
+        super(manager, node);
     }
 
     @Override
     public String getNodeHelp() {
-        return String.format(Locale.getDefault(), "You have a choice of the following %s parameters:",
+        return (this.children.size() <= 1) ? null :
+         String.format(Locale.getDefault(), "You have a choice of the following %s parameters:",
                 this.children.size());
     }
 
@@ -39,7 +40,7 @@ public class XSDChoice extends XSDComplexElement<XSDElement<?>> {
         while (child != null) {
             child.setUserData("tns", this.node.getUserData("tns"), null);
             XSDElement element = XSDElement.getInstance(this.manager, child);
-            element.setHelp(String.format(Locale.getDefault(), "Choice (%s) --------------", i));
+            element.setNodeHelp(String.format(Locale.getDefault(), "Choice (%s) --------------", i));
             i++;
             this.children.add(element);
             child = Utils.getNextXMLSibling(child);

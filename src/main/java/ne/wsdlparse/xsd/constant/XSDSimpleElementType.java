@@ -1,8 +1,8 @@
-package ne.wsdlparse.xsd.constant;
+package ne.wsdlparser.lib.xsd.constant;
 
-import ne.wsdlparse.esql.constant.ESQLDataType;
-import ne.wsdlparse.exception.WSDLException;
-import ne.wsdlparse.exception.WSDLExceptionCode;
+import ne.wsdlparser.lib.esql.constant.ESQLDataType;
+import ne.wsdlparser.lib.exception.WSDLException;
+import ne.wsdlparser.lib.exception.WSDLExceptionCode;
 
 public enum XSDSimpleElementType {
     BYTE("byte", "A signed 8-bit integer", ESQLDataType.INTEGER), DECIMAL("decimal", "A decimal value", ESQLDataType.DECIMAL),
@@ -36,7 +36,7 @@ public enum XSDSimpleElementType {
     BOOLEAN("boolean", "Boolean value, true or false", ESQLDataType.BOOLEAN),
     HEX_BINRARY("hexBinary", "hexadecimal-encoded binary data", ESQLDataType.BLOB), APP_INFO("appInfo", "", ESQLDataType.ESQLComment),
     DOCUMENTATION("documentation", "", ESQLDataType.ESQLComment), LIST("list", "list seperated by a space", ESQLDataType.CHARACTER),
-    UNION_CHILDREN("", "Union of multiple types.", ESQLDataType.CHARACTER), ANY("any", "You can put any elements at this level", null),
+    UNION_CHILDREN("", "Union of multiple types.", ESQLDataType.CHARACTER), ANY("any", "You can put any elements at this level", ESQLDataType.NULL),
     ENTITIES("", "Union of multiple types.", ESQLDataType.CHARACTER);
 
     private String desc;

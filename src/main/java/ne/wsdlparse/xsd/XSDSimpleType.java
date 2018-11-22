@@ -1,28 +1,21 @@
-package ne.wsdlparse.xsd;
+package ne.wsdlparser.lib.xsd;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Locale;
 
 import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpressionException;
 
 import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
-import ne.wsdlparse.Utils;
-import ne.wsdlparse.WSDLManagerRetrieval;
-import ne.wsdlparse.esql.ESQLLine;
-import ne.wsdlparse.exception.WSDLException;
-import ne.wsdlparse.utility.ConsoleStyle;
-import ne.wsdlparse.xsd.constant.XSDSimpleElementType;
-import ne.wsdlparse.xsd.restriction.XSDRestrictionParam;
-
-public class XSDSimpleType extends XSDComplexElement<XSDElement<?>> {
-    private String[] restrictionStringRepresntation;
+import ne.wsdlparser.lib.WSDLManagerRetrieval;
+import ne.wsdlparser.lib.exception.WSDLException;
+import ne.wsdlparser.lib.xsd.constant.XSDSimpleElementType;
+/**
+ * Simple type XSD implementation.
+ * @author nour
+ */
+public class XSDSimpleType extends XSDComplexElement {
     private XSDSimpleElementType simpleType;
     private boolean hasList;
     private boolean hasUnion;
@@ -30,7 +23,7 @@ public class XSDSimpleType extends XSDComplexElement<XSDElement<?>> {
 
     public XSDSimpleType(WSDLManagerRetrieval manager, Node node)
             throws XPathExpressionException, SAXException, IOException, ParserConfigurationException, WSDLException {
-        super(manager, node, XSDSimpleType.class);
+        super(manager, node);
     }
 
     @Override
@@ -72,12 +65,12 @@ public class XSDSimpleType extends XSDComplexElement<XSDElement<?>> {
     }
 
     @Override
-    public void toESQL() {
+    public void toESQL() throws WSDLException{
         this.handleList();
         super.toESQL();
-        // this.addHelpComment();
+        // this.addHelpComments();
         String val = this.fixedValue == null ? this.defaultValue : this.fixedValue;
-        this.manager.getESQLManager().addParam(this.prefix, this.name, this.simpleType, val);
+        this.manager.getESQLManager().addParam(getPrintablePrefix(), this.name, this.simpleType, val);
     }
 
     @Override

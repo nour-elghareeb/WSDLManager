@@ -1,10 +1,18 @@
-package ne.wsdlparse.esql;
+package ne.wsdlparser.lib.esql;
 
-import ne.wsdlparse.constant.ESQLVerbosity;
-import ne.wsdlparse.utility.ConsoleStyle;
+import ne.wsdlparser.lib.constant.ESQLVerbosity;
+import ne.wsdlparser.lib.utility.ConsoleStyle;
 
 public class ESQLCommentLine extends ESQLLine {
     private String value;
+
+    public String getValue() {
+        return value;
+    }
+
+    public String getTitle() {
+        return title;
+    }
     private String title;
     private ESQLVerbosity verbosityType;
 
@@ -26,7 +34,9 @@ public class ESQLCommentLine extends ESQLLine {
             return "";
         return "-- ".concat(this.value).concat(";");
     }
-
+    /**
+     * print line. if value is null, it prints empty line.
+     */
     @Override
     public void print() {
         if (this.value == null) {

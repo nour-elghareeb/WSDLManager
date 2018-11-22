@@ -1,4 +1,4 @@
-package ne.wsdlparse.esql.constant;
+package ne.wsdlparser.lib.esql.constant;
 
 public enum ESQLDataType {
     // Numeric
